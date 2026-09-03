@@ -2,68 +2,869 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>고등학교 유전학 퀴즈 게임</title>
+
     <style>
-        body { 
-            text-align: center; 
-            font-family: 'Malgun Gothic', sans-serif; 
-            background-color: #f0f8ff; 
+        * {
+            box-sizing: border-box;
         }
-        #gameCanvas { 
-            /* 과학실 바닥 느낌의 색상 */
-            background-color: #8fbc8f; 
-            border: 3px solid #333; 
-            margin-top: 20px; 
+
+        body {
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            font-family: "Malgun Gothic", sans-serif;
+            background: linear-gradient(#dff4ff, #f7fbff);
+            color: #1f2937;
+        }
+
+        h1 {
+            margin: 5px 0;
+        }
+
+        .game-info {
+            width: min(900px, 100%);
+            margin: 15px auto 10px;
+            padding: 12px 18px;
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+            font-weight: bold;
+        }
+
+        #gameCanvas {
+            width: min(900px, 100%);
+            height: auto;
+            display: block;
+            margin: 0 auto;
+            border: 4px solid #263238;
+            border-radius: 14px;
+            background: #8fbc8f;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+        }
+
+        #hint {
+            width: min(900px, 100%);
+            min-height: 48px;
+            margin: 10px auto;
+            padding: 12px;
             border-radius: 10px;
+            color: white;
+            background: #263238;
+            font-weight: bold;
         }
-        .quiz-box { 
-            margin-top: 20px; 
-            padding: 20px; 
-            background: white; 
-            display: inline-block; 
-            border-radius: 10px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+
+        .quiz-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.65);
+        }
+
+        .quiz-modal.hidden {
+            display: none;
+        }
+
+        .quiz-box {
+            width: min(600px, 100%);
+            padding: 25px;
+            text-align: left;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .quiz-box h2 {
+            margin-top: 0;
+            color: #1565c0;
+        }
+
+        .concept {
+            padding: 14px;
+            line-height: 1.7;
+            background: #edf7ff;
+            border-left: 5px solid #1976d2;
+            border-radius: 8px;
+        }
+
+        #question {
+            line-height: 1.6;
+        }
+
+        #choices {
+            display: grid;
+            gap: 10px;
+        }
+
+        .choice {
+            width: 100%;
+            padding: 13px;
+            text-align: left;
+            border: 2px solid #b0bec5;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .choice:hover:not(:disabled) {
+            border-color: #1976d2;
+            background: #eef7ff;
+        }
+
+        .choice.correct {
+            border-color: #2e7d32;
+            background: #e8f5e9;
+        }
+
+        .choice.wrong {
+            border-color: #c62828;
+            background: #ffebee;
+        }
+
+        #feedback {
+            min-height: 30px;
+            margin-top: 15px;
+            line-height: 1.6;
+            font-weight: bold;
+        }
+
+        #returnButton {
+            width: 100%;
+            margin-top: 12px;
+            padding: 13px;
+            border: 0;
+            border-radius: 10px;
+            color: white;
+            background: #1976d2;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        #returnButton[hidden] {
+            display: none;
+        }
+
+        .notice {
+            color: #64748b;
+            font-size: 13px;
         }
     </style>
 </head>
+
 <body>
-    <h1>🧬 고교 유전학 마스터 🧬</h1>
-    <p>방향키로 움직여서 퀴즈를 풀어보세요! (현재는 데모 화면입니다)</p>
-    
-    <canvas id="gameCanvas" width="640" height="480"></canvas>
-    
-    <div class="quiz-box" id="quizBox">
-        <h3 id="question">Q. 멘델의 유전 법칙 중, 우성 형질만 겉으로 드러나는 법칙은?</h3>
-        <button onclick="checkAnswer('우열의 원리')">우열의 원리</button>
-        <button onclick="checkAnswer('분리의 법칙')">분리의 법칙</button>
-        <button onclick="checkAnswer('독립의 법칙')">독립의 법칙</button>
+    <h1>고교 유전학 마스터</h1>
+    <p>방향키로 비숑을 움직이고, 문 앞에서 Enter 키를 누르세요.</p>
+
+    <div class="game-info">
+        <span id="sceneName">현재 위치: 학교 앞</span>
+        <span>점수: <strong id="score">0</strong>점</span>
+    </div>
+
+    <canvas id="gameCanvas" width="900" height="560"></canvas>
+
+    <div id="hint">
+        방향키를 이용해 학교 입구로 이동하세요.
+    </div>
+
+    <p class="notice">
+        이 게임은 유전 원리를 이해하기 위한 교육용 단순화 모형입니다.
+    </p>
+
+    <div id="quizModal" class="quiz-modal hidden">
+        <div class="quiz-box">
+            <h2 id="quizTitle">유전학 퀴즈</h2>
+
+            <div id="concept" class="concept"></div>
+
+            <h3 id="question"></h3>
+
+            <div id="choices"></div>
+
+            <div id="feedback"></div>
+
+            <button id="returnButton" hidden>
+                복도로 돌아가기
+            </button>
+        </div>
     </div>
 
     <script>
-        // 게임 화면(캔버스) 설정
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        // 고등학교 배경 텍스트 그리기
-        ctx.fillStyle = 'white';
-        ctx.font = '24px 맑은 고딕';
-        ctx.fillText('🏫 생명과학실', 250, 50);
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
 
-        // 플레이어 캐릭터 (일단은 파란색 네모로 표현) 그리기
-        ctx.fillStyle = 'blue';
-        ctx.fillRect(300, 220, 40, 40); 
-        ctx.fillStyle = 'white';
-        ctx.font = '12px 맑은 고딕';
-        ctx.fillText('나', 315, 245);
+        const hint = document.getElementById("hint");
+        const sceneName = document.getElementById("sceneName");
+        const scoreText = document.getElementById("score");
 
-        // 정답 확인 함수
-        function checkAnswer(answer) {
-            if(answer === '우열의 원리') {
-                alert('정답입니다! 다음 문제로 이동합니다.');
-            } else {
-                alert('틀렸습니다. 다시 한 번 생각해 보세요!');
+        const quizModal = document.getElementById("quizModal");
+        const quizTitle = document.getElementById("quizTitle");
+        const concept = document.getElementById("concept");
+        const question = document.getElementById("question");
+        const choices = document.getElementById("choices");
+        const feedback = document.getElementById("feedback");
+        const returnButton = document.getElementById("returnButton");
+
+        let scene = "outside";
+        let currentRoom = null;
+        let quizOpen = false;
+        let score = 0;
+
+        const completedRooms = new Set();
+        const pressedKeys = {};
+
+        const player = {
+            x: 450,
+            y: 470,
+            speed: 4,
+            facing: "right"
+        };
+
+        const classroomDoors = [
+            {
+                key: "dominant",
+                x: 140,
+                label: "상염색체 우성"
+            },
+            {
+                key: "recessive",
+                x: 350,
+                label: "상염색체 열성"
+            },
+            {
+                key: "codominant",
+                x: 560,
+                label: "공동우성·복대립"
+            },
+            {
+                key: "xlinked",
+                x: 770,
+                label: "X염색체 연관"
+            }
+        ];
+
+        const quizData = {
+            dominant: {
+                title: "상염색체 우성 유전 교실",
+                concept:
+                    "상염색체 우성 유전은 관련 대립유전자 하나만 있어도 형질이 나타날 수 있는 유전 양식입니다.",
+                question:
+                    "한 부모의 유전자형이 Aa이고 다른 부모가 aa일 때, 자녀가 A를 물려받을 확률은?",
+                options: ["0%", "25%", "50%", "100%"],
+                answer: 2,
+                explanation:
+                    "Aa인 부모는 A와 a를 각각 50%의 확률로 전달하므로 정답은 50%입니다."
+            },
+
+            recessive: {
+                title: "상염색체 열성 유전 교실",
+                concept:
+                    "상염색체 열성 유전에서는 일반적으로 관련 대립유전자를 두 개 물려받아야 형질이 나타납니다.",
+                question:
+                    "두 부모가 모두 보인자 Aa일 때 자녀가 aa일 이론적 확률은?",
+                options: ["0%", "25%", "50%", "75%"],
+                answer: 1,
+                explanation:
+                    "Aa와 Aa의 조합은 AA, Aa, Aa, aa이므로 aa의 확률은 25%입니다."
+            },
+
+            codominant: {
+                title: "공동우성·복대립 유전 교실",
+                concept:
+                    "ABO 혈액형은 집단에 IA, IB, i라는 세 대립유전자가 존재하는 복대립 유전이며, IA와 IB는 서로 공동우성입니다.",
+                question:
+                    "유전자형이 IAIB인 사람의 ABO 혈액형은?",
+                options: ["A형", "B형", "AB형", "O형"],
+                answer: 2,
+                explanation:
+                    "IA와 IB가 모두 표현되므로 혈액형은 AB형입니다."
+            },
+
+            xlinked: {
+                title: "X염색체 연관 유전 교실",
+                concept:
+                    "혈우병 A는 대표적으로 X염색체 연관 열성 유전 양식으로 설명됩니다.",
+                question:
+                    "교육용 XX·XY 모형에서 아버지의 X염색체는 누구에게 전달되는가?",
+                options: [
+                    "모든 아들",
+                    "모든 딸",
+                    "아들과 딸 모두에게 항상 전달",
+                    "어느 자녀에게도 전달되지 않음"
+                ],
+                answer: 1,
+                explanation:
+                    "아버지는 딸에게 X염색체를, 아들에게 Y염색체를 전달합니다."
+            }
+        };
+
+        function distance(x1, y1, x2, y2) {
+            return Math.hypot(x1 - x2, y1 - y2);
+        }
+
+        function drawOutside() {
+            sceneName.textContent = "현재 위치: 학교 앞";
+
+            // 하늘
+            ctx.fillStyle = "#b9e7ff";
+            ctx.fillRect(0, 0, canvas.width, 180);
+
+            // 잔디
+            ctx.fillStyle = "#8bcf70";
+            ctx.fillRect(0, 180, canvas.width, 380);
+
+            // 길
+            ctx.fillStyle = "#d7d0bd";
+            ctx.beginPath();
+            ctx.moveTo(350, 560);
+            ctx.lineTo(390, 285);
+            ctx.lineTo(510, 285);
+            ctx.lineTo(550, 560);
+            ctx.closePath();
+            ctx.fill();
+
+            // 학교 건물
+            ctx.fillStyle = "#f5d58a";
+            ctx.fillRect(80, 55, 740, 235);
+
+            // 지붕
+            ctx.fillStyle = "#4f6d8a";
+            ctx.fillRect(60, 35, 780, 35);
+
+            // 학교 이름
+            ctx.fillStyle = "#263238";
+            ctx.font = "bold 30px Malgun Gothic";
+            ctx.textAlign = "center";
+            ctx.fillText("생명과학 고등학교", 450, 110);
+
+            // 창문
+            for (let x = 120; x <= 720; x += 150) {
+                ctx.fillStyle = "#90caf9";
+                ctx.fillRect(x, 140, 85, 65);
+
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 4;
+                ctx.strokeRect(x, 140, 85, 65);
+            }
+
+            // 학교 입구
+            ctx.fillStyle = "#795548";
+            ctx.fillRect(390, 185, 120, 105);
+
+            ctx.strokeStyle = "#4e342e";
+            ctx.lineWidth = 5;
+            ctx.strokeRect(390, 185, 120, 105);
+
+            ctx.strokeStyle = "#d7ccc8";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(450, 185);
+            ctx.lineTo(450, 290);
+            ctx.stroke();
+
+            ctx.fillStyle = "#f5d58a";
+            ctx.font = "bold 18px Malgun Gothic";
+            ctx.fillText("입구", 450, 245);
+
+            // 나무
+            drawTree(80, 300);
+            drawTree(820, 300);
+            drawTree(120, 430);
+            drawTree(780, 430);
+        }
+
+        function drawTree(x, y) {
+            ctx.fillStyle = "#795548";
+            ctx.fillRect(x - 10, y, 20, 60);
+
+            ctx.fillStyle = "#2e7d32";
+            ctx.beginPath();
+            ctx.arc(x, y - 10, 42, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(x - 25, y + 5, 30, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(x + 25, y + 5, 30, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawHallway() {
+            sceneName.textContent = "현재 위치: 학교 1층 복도";
+
+            // 벽
+            ctx.fillStyle = "#fff3cd";
+            ctx.fillRect(0, 0, canvas.width, 170);
+
+            // 복도 바닥
+            ctx.fillStyle = "#d7ecf5";
+            ctx.fillRect(0, 170, canvas.width, 390);
+
+            // 바닥 타일
+            ctx.strokeStyle = "#b0bec5";
+            ctx.lineWidth = 1;
+
+            for (let x = 0; x <= canvas.width; x += 60) {
+                ctx.beginPath();
+                ctx.moveTo(x, 170);
+                ctx.lineTo(x, 560);
+                ctx.stroke();
+            }
+
+            for (let y = 170; y <= 560; y += 60) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(900, y);
+                ctx.stroke();
+            }
+
+            // 교실 문
+            classroomDoors.forEach((door) => {
+                ctx.fillStyle = completedRooms.has(door.key)
+                    ? "#43a047"
+                    : "#8d6e63";
+
+                ctx.fillRect(door.x - 70, 60, 140, 110);
+
+                ctx.strokeStyle = "#4e342e";
+                ctx.lineWidth = 4;
+                ctx.strokeRect(door.x - 70, 60, 140, 110);
+
+                ctx.fillStyle = "white";
+                ctx.font = "bold 16px Malgun Gothic";
+                ctx.textAlign = "center";
+                ctx.fillText(door.label, door.x, 120);
+
+                if (completedRooms.has(door.key)) {
+                    ctx.font = "bold 15px Malgun Gothic";
+                    ctx.fillText("완료", door.x, 148);
+                }
+            });
+
+            // 밖으로 나가는 문
+            ctx.fillStyle = "#546e7a";
+            ctx.fillRect(390, 515, 120, 45);
+
+            ctx.fillStyle = "white";
+            ctx.font = "bold 17px Malgun Gothic";
+            ctx.fillText("학교 밖", 450, 545);
+
+            // 복도 안내판
+            ctx.fillStyle = "#1565c0";
+            ctx.fillRect(340, 205, 220, 55);
+
+            ctx.fillStyle = "white";
+            ctx.font = "bold 22px Malgun Gothic";
+            ctx.fillText("유전학 탐구 복도", 450, 240);
+        }
+
+        function drawClassroom() {
+            const room = quizData[currentRoom];
+
+            sceneName.textContent = "현재 위치: " + room.title;
+
+            // 벽과 바닥
+            ctx.fillStyle = "#f4e4c1";
+            ctx.fillRect(0, 0, canvas.width, 220);
+
+            ctx.fillStyle = "#c9a66b";
+            ctx.fillRect(0, 220, canvas.width, 340);
+
+            // 칠판
+            ctx.fillStyle = "#2f5d50";
+            ctx.fillRect(230, 35, 440, 130);
+
+            ctx.strokeStyle = "#6d4c41";
+            ctx.lineWidth = 10;
+            ctx.strokeRect(230, 35, 440, 130);
+
+            ctx.fillStyle = "white";
+            ctx.font = "bold 28px Malgun Gothic";
+            ctx.textAlign = "center";
+            ctx.fillText(room.title, 450, 110);
+
+            // 책상
+            for (let row = 0; row < 3; row++) {
+                for (let column = 0; column < 4; column++) {
+                    const x = 145 + column * 190;
+                    const y = 275 + row * 90;
+
+                    ctx.fillStyle = "#8d6e63";
+                    ctx.fillRect(x, y, 120, 45);
+
+                    ctx.fillStyle = "#5d4037";
+                    ctx.fillRect(x + 10, y + 45, 10, 25);
+                    ctx.fillRect(x + 100, y + 45, 10, 25);
+                }
             }
         }
+
+        function drawBichon(x, y) {
+            const moving =
+                pressedKeys.ArrowUp ||
+                pressedKeys.ArrowDown ||
+                pressedKeys.ArrowLeft ||
+                pressedKeys.ArrowRight;
+
+            const bounce = moving
+                ? Math.sin(Date.now() / 90) * 2
+                : 0;
+
+            ctx.save();
+            ctx.translate(x, y + bounce);
+
+            if (player.facing === "left") {
+                ctx.scale(-1, 1);
+            }
+
+            // 그림자
+            ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+            ctx.beginPath();
+            ctx.ellipse(0, 20, 29, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 꼬리
+            ctx.fillStyle = "#fffdf7";
+
+            ctx.beginPath();
+            ctx.arc(-27, -4, 14, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(-34, -11, 11, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 몸통
+            const bodyFluff = [
+                [-18, 2], [-10, -8], [0, -10],
+                [12, -7], [20, 2], [14, 12],
+                [0, 15], [-14, 12]
+            ];
+
+            bodyFluff.forEach(([fx, fy]) => {
+                ctx.beginPath();
+                ctx.arc(fx, fy, 16, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 머리의 복슬복슬한 털
+            const headFluff = [
+                [-15, -24], [-8, -36], [4, -39],
+                [17, -33], [22, -20], [12, -12],
+                [-3, -11], [-18, -14]
+            ];
+
+            headFluff.forEach(([fx, fy]) => {
+                ctx.beginPath();
+                ctx.arc(fx + 15, fy, 15, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 귀
+            ctx.fillStyle = "#e8ddd0";
+
+            ctx.beginPath();
+            ctx.ellipse(6, -25, 8, 15, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.ellipse(34, -25, 8, 15, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 눈
+            ctx.fillStyle = "#222";
+
+            ctx.beginPath();
+            ctx.arc(14, -27, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(27, -27, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 코
+            ctx.beginPath();
+            ctx.arc(21, -18, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 다리
+            ctx.fillStyle = "#fffdf7";
+            ctx.fillRect(-12, 12, 10, 14);
+            ctx.fillRect(12, 12, 10, 14);
+
+            ctx.restore();
+        }
+
+        function updatePlayer() {
+            if (quizOpen) {
+                return;
+            }
+
+            let dx = 0;
+            let dy = 0;
+
+            if (pressedKeys.ArrowLeft) {
+                dx -= player.speed;
+                player.facing = "left";
+            }
+
+            if (pressedKeys.ArrowRight) {
+                dx += player.speed;
+                player.facing = "right";
+            }
+
+            if (pressedKeys.ArrowUp) {
+                dy -= player.speed;
+            }
+
+            if (pressedKeys.ArrowDown) {
+                dy += player.speed;
+            }
+
+            // 대각선 이동 속도 조절
+            if (dx !== 0 && dy !== 0) {
+                dx *= 0.71;
+                dy *= 0.71;
+            }
+
+            player.x += dx;
+            player.y += dy;
+
+            let minimumY = 290;
+
+            if (scene === "hallway") {
+                minimumY = 170;
+            }
+
+            if (scene === "classroom") {
+                minimumY = 220;
+            }
+
+            player.x = Math.max(30, Math.min(870, player.x));
+            player.y = Math.max(minimumY, Math.min(530, player.y));
+        }
+
+        function updateHint() {
+            if (quizOpen) {
+                hint.textContent = "퀴즈를 풀고 있습니다.";
+                return;
+            }
+
+            if (scene === "outside") {
+                const nearEntrance =
+                    distance(player.x, player.y, 450, 300) < 75;
+
+                hint.textContent = nearEntrance
+                    ? "학교 입구입니다. Enter 키를 눌러 들어가세요."
+                    : "방향키를 이용해 학교 입구로 이동하세요.";
+            }
+
+            if (scene === "hallway") {
+                const nearbyDoor = classroomDoors.find((door) =>
+                    distance(player.x, player.y, door.x, 185) < 75
+                );
+
+                const nearExit =
+                    distance(player.x, player.y, 450, 520) < 75;
+
+                if (nearbyDoor) {
+                    hint.textContent =
+                        nearbyDoor.label +
+                        " 교실입니다. Enter 키를 눌러 들어가세요.";
+                } else if (nearExit) {
+                    hint.textContent =
+                        "학교 출구입니다. Enter 키를 누르면 학교 밖으로 나갑니다.";
+                } else {
+                    hint.textContent =
+                        "복도를 이동해 원하는 교실 문 앞에서 Enter 키를 누르세요.";
+                }
+            }
+        }
+
+        function interact() {
+            if (quizOpen) {
+                return;
+            }
+
+            if (scene === "outside") {
+                const nearEntrance =
+                    distance(player.x, player.y, 450, 300) < 75;
+
+                if (nearEntrance) {
+                    scene = "hallway";
+                    player.x = 450;
+                    player.y = 450;
+                }
+
+                return;
+            }
+
+            if (scene === "hallway") {
+                const nearExit =
+                    distance(player.x, player.y, 450, 520) < 75;
+
+                if (nearExit) {
+                    scene = "outside";
+                    player.x = 450;
+                    player.y = 350;
+                    return;
+                }
+
+                const nearbyDoor = classroomDoors.find((door) =>
+                    distance(player.x, player.y, door.x, 185) < 75
+                );
+
+                if (nearbyDoor) {
+                    enterClassroom(nearbyDoor.key);
+                }
+            }
+        }
+
+        function enterClassroom(roomKey) {
+            currentRoom = roomKey;
+            scene = "classroom";
+
+            player.x = 450;
+            player.y = 490;
+
+            // 교실 배경이 먼저 보인 뒤 퀴즈가 나타남
+            setTimeout(() => {
+                openQuiz(roomKey);
+            }, 250);
+        }
+
+        function openQuiz(roomKey) {
+            const quiz = quizData[roomKey];
+
+            quizOpen = true;
+            quizModal.classList.remove("hidden");
+
+            quizTitle.textContent = quiz.title;
+            concept.textContent = quiz.concept;
+            question.textContent = "Q. " + quiz.question;
+
+            feedback.textContent = "";
+            returnButton.hidden = true;
+            choices.innerHTML = "";
+
+            quiz.options.forEach((option, index) => {
+                const button = document.createElement("button");
+
+                button.className = "choice";
+                button.textContent =
+                    (index + 1) + ". " + option;
+
+                button.addEventListener("click", () => {
+                    checkAnswer(index);
+                });
+
+                choices.appendChild(button);
+            });
+        }
+
+        function checkAnswer(selectedIndex) {
+            const quiz = quizData[currentRoom];
+            const buttons = document.querySelectorAll(".choice");
+
+            buttons.forEach((button) => {
+                button.disabled = true;
+            });
+
+            buttons[quiz.answer].classList.add("correct");
+
+            if (selectedIndex === quiz.answer) {
+                feedback.textContent =
+                    "정답입니다! +10점 " +
+                    quiz.explanation;
+
+                score += 10;
+                scoreText.textContent = score;
+            } else {
+                buttons[selectedIndex].classList.add("wrong");
+
+                feedback.textContent =
+                    "정답을 다시 확인해 보세요. " +
+                    quiz.explanation;
+            }
+
+            completedRooms.add(currentRoom);
+            returnButton.hidden = false;
+        }
+
+        returnButton.addEventListener("click", () => {
+            quizModal.classList.add("hidden");
+            quizOpen = false;
+            scene = "hallway";
+
+            const door = classroomDoors.find(
+                (item) => item.key === currentRoom
+            );
+
+            player.x = door.x;
+            player.y = 230;
+            currentRoom = null;
+        });
+
+        window.addEventListener("keydown", (event) => {
+            if (
+                event.key === "ArrowUp" ||
+                event.key === "ArrowDown" ||
+                event.key === "ArrowLeft" ||
+                event.key === "ArrowRight"
+            ) {
+                event.preventDefault();
+                pressedKeys[event.key] = true;
+            }
+
+            if (event.key === "Enter") {
+                interact();
+            }
+        });
+
+        window.addEventListener("keyup", (event) => {
+            pressedKeys[event.key] = false;
+        });
+
+        function gameLoop() {
+            updatePlayer();
+
+            ctx.clearRect(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+
+            if (scene === "outside") {
+                drawOutside();
+            }
+
+            if (scene === "hallway") {
+                drawHallway();
+            }
+
+            if (scene === "classroom") {
+                drawClassroom();
+            }
+
+            drawBichon(player.x, player.y);
+            updateHint();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
     </script>
 </body>
 </html>
