@@ -1,1868 +1,569 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  >
+  <meta name="theme-color" content="#123b67">
+  <meta
+    name="description"
+    content="고등학교 1학년 사람의 유전 학습용 교실 방탈출 웹앱"
+  >
 
-    <title>GeneQuest School</title>
+  <title>교실 활동</title>
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            padding: 18px;
-            text-align: center;
-            font-family: "Malgun Gothic", sans-serif;
-            color: #263238;
-            background: linear-gradient(#d9f2ff, #f8fcff);
-        }
-
-        h1 {
-            margin: 4px 0;
-            color: #17375e;
-        }
-
-        .description {
-            margin: 8px 0 15px;
-            color: #526578;
-        }
-
-        .game-info {
-            width: min(900px, 100%);
-            margin: 0 auto 10px;
-            padding: 12px 18px;
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-            border: 2px solid #d6e6f5;
-            border-radius: 14px;
-            background: white;
-            box-shadow: 0 5px 14px rgba(20, 55, 90, 0.14);
-            font-weight: bold;
-        }
-
-        #gameCanvas {
-            width: min(900px, 100%);
-            height: auto;
-            display: block;
-            margin: auto;
-            border: 5px solid white;
-            border-radius: 18px;
-            background: #8fbc8f;
-            box-shadow: 0 12px 28px rgba(20, 55, 90, 0.25);
-        }
-
-        #hint {
-            width: min(900px, 100%);
-            min-height: 48px;
-            margin: 10px auto;
-            padding: 13px;
-            color: white;
-            border-radius: 12px;
-            background: #263b50;
-            font-weight: bold;
-        }
-
-        .notice {
-            color: #66788a;
-            font-size: 13px;
-        }
-
-        .quiz-modal {
-            position: fixed;
-            inset: 0;
-            z-index: 100;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            background: rgba(15, 30, 45, 0.72);
-        }
-
-        .quiz-modal.hidden {
-            display: none;
-        }
-
-        .quiz-box {
-            width: min(620px, 100%);
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 27px;
-            text-align: left;
-            border: 5px solid white;
-            border-radius: 22px;
-            background: white;
-            box-shadow: 0 20px 55px rgba(0, 0, 0, 0.35);
-        }
-
-        .quiz-box h2 {
-            margin-top: 0;
-            color: #1565c0;
-        }
-
-        .concept {
-            padding: 15px;
-            line-height: 1.7;
-            border-left: 6px solid #1976d2;
-            border-radius: 10px;
-            background: #edf7ff;
-        }
-
-        #question {
-            margin-top: 22px;
-            line-height: 1.6;
-        }
-
-        #choices {
-            display: grid;
-            gap: 10px;
-        }
-
-        .choice {
-            width: 100%;
-            padding: 14px;
-            text-align: left;
-            color: #263238;
-            border: 2px solid #b0bec5;
-            border-radius: 12px;
-            background: white;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-        }
-
-        .choice:hover:not(:disabled) {
-            border-color: #1976d2;
-            background: #eef7ff;
-        }
-
-        .choice.correct {
-            color: #1b5e20;
-            border-color: #2e7d32;
-            background: #e8f5e9;
-        }
-
-        .choice.wrong {
-            color: #b71c1c;
-            border-color: #c62828;
-            background: #ffebee;
-        }
-
-        #feedback {
-            min-height: 30px;
-            margin-top: 16px;
-            line-height: 1.7;
-            font-weight: bold;
-        }
-
-        #returnButton {
-            width: 100%;
-            margin-top: 12px;
-            padding: 14px;
-            color: white;
-            border: 0;
-            border-radius: 12px;
-            background: #1976d2;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-        }
-
-        #returnButton:hover {
-            background: #0d5eaa;
-        }
-
-        #returnButton[hidden] {
-            display: none;
-        }
-
-        @media (max-width: 650px) {
-            body {
-                padding: 8px;
-            }
-
-            h1 {
-                font-size: 23px;
-            }
-
-            .game-info {
-                padding: 9px;
-                font-size: 13px;
-            }
-
-            .description {
-                font-size: 14px;
-            }
-
-            .quiz-box {
-                padding: 20px;
-            }
-        }
-    </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <h1>GeneQuest School</h1>
+  <a class="skip-link" href="#main">게임 본문으로 이동</a>
 
-    <p class="description">
-        방향키로 비숑을 움직이고, 문 앞에서 Enter 키를 누르세요.
-    </p>
+  <main id="main">
+    <!-- 시작 화면 -->
+    <section
+      id="startScreen"
+      class="screen start-screen"
+      aria-labelledby="startDescription"
+    >
+      <div class="start-classroom" aria-hidden="true">
+        <div class="start-board">오늘의 학습</div>
+        <div class="start-desks"></div>
+      </div>
 
-    <div class="game-info">
-        <span id="sceneName">현재 위치: 학교 앞</span>
-        <span>
-            점수: <strong id="score">0</strong>점
-            · 완료: <strong id="completed">0</strong>/4
-        </span>
+      <div class="start-card">
+        <p id="startDescription">
+          교실에 숨겨진 유전 문제를 해결하고 열쇠를 모으세요.
+          모든 문을 열고 학교 밖으로 나가면 탈출에 성공합니다.
+        </p>
+
+        <div class="start-actions">
+          <button id="startBtn" class="primary">
+            시작하기
+          </button>
+
+          <button id="continueBtn">
+            이어하기
+          </button>
+
+          <button data-open="helpModal">
+            게임 방법
+          </button>
+
+          <button data-open="learningModal">
+            학습 내용
+          </button>
+
+          <button
+            id="startSoundBtn"
+            aria-pressed="true"
+          >
+            🔊 소리 끄기
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 게임 화면 -->
+    <section
+      id="gameScreen"
+      class="screen game-screen hidden"
+      aria-label="교실 탐험 게임"
+    >
+      <header class="hud">
+        <div>
+          <span>현재 교실</span>
+          <strong id="roomName">유전 기초 교실</strong>
+        </div>
+
+        <div>
+          <span>점수</span>
+          <strong id="scoreValue">0</strong>
+        </div>
+
+        <div>
+          <span id="roomKeyLabel">1교실 파란 열쇠</span>
+          <strong id="roomKeys">🔑 0/5</strong>
+        </div>
+
+        <div>
+          <span>전체 열쇠</span>
+          <strong id="totalKeys">🔑 0/25</strong>
+        </div>
+
+        <div>
+          <span>진행률</span>
+          <strong id="progressValue">0%</strong>
+        </div>
+
+        <div>
+          <span>힌트</span>
+          <strong id="hintCount">0회</strong>
+        </div>
+
+        <button
+          id="soundBtn"
+          class="icon-button"
+          aria-label="소리 끄기"
+          aria-pressed="true"
+        >
+          🔊
+        </button>
+
+        <button
+          class="icon-button"
+          data-open="menuModal"
+          aria-label="메뉴 열기"
+        >
+          ☰
+        </button>
+      </header>
+
+      <div class="progress-track" aria-hidden="true">
+        <div id="progressBar"></div>
+      </div>
+
+      <!-- 교실 지도 -->
+      <section
+        id="map"
+        class="game-map room-basic"
+        aria-label="위에서 내려다본 교실 지도"
+      >
+        <div class="room-wall top-wall"></div>
+        <div class="room-wall left-wall"></div>
+        <div class="room-wall right-wall"></div>
+        <div class="room-wall bottom-wall"></div>
+
+        <div class="blackboard obstacle" aria-hidden="true">
+          유전 학습
+        </div>
+
+        <div class="teacher-desk obstacle" aria-hidden="true">
+          교탁
+        </div>
+
+        <div class="bookshelf obstacle" aria-hidden="true">
+          책장
+        </div>
+
+        <div class="computer obstacle" aria-hidden="true">
+          컴퓨터
+        </div>
+
+        <div class="bulletin" aria-hidden="true">
+          학습 게시판
+        </div>
+
+        <div class="gene-cards" aria-hidden="true">
+          유전자 카드
+        </div>
+
+        <div class="student-desks" aria-hidden="true"></div>
+
+        <!-- JavaScript에서 조사 지점 5개가 생성됩니다. -->
+        <div id="hotspots"></div>
+
+        <!-- 다음 교실로 이동하는 문 -->
+        <button
+          id="door"
+          class="door locked"
+          aria-label="잠긴 출입문"
+        >
+          <span class="door-label" id="doorLabel">
+            다음 교실
+          </span>
+
+          <span class="lock">🔒</span>
+        </button>
+
+        <!-- 플레이어 캐릭터 -->
+        <div
+          id="player"
+          class="player facing-down"
+          role="img"
+          aria-label="흰색 비숑프리제 학생 캐릭터"
+        >
+          <img
+            id="playerSprite"
+            src="assets/bichon-sprite.png"
+            alt="흰색 비숑프리제 캐릭터"
+          >
+
+          <span class="fallback-bichon" aria-hidden="true">
+            비숑
+          </span>
+        </div>
+
+        <div
+          id="interactionPrompt"
+          class="interaction-prompt hidden"
+          role="status"
+        ></div>
+      </section>
+
+      <!-- 모바일 조작 버튼 -->
+      <div
+        class="mobile-controls"
+        aria-label="모바일 조작 버튼"
+      >
+        <div class="dpad">
+          <button
+            data-direction="up"
+            aria-label="위로 이동"
+          >
+            ▲
+          </button>
+
+          <button
+            data-direction="left"
+            aria-label="왼쪽으로 이동"
+          >
+            ◀
+          </button>
+
+          <button
+            data-direction="down"
+            aria-label="아래로 이동"
+          >
+            ▼
+          </button>
+
+          <button
+            data-direction="right"
+            aria-label="오른쪽으로 이동"
+          >
+            ▶
+          </button>
+        </div>
+
+        <button
+          id="mobileInteract"
+          class="interact-button"
+        >
+          조사
+        </button>
+      </div>
+    </section>
+
+    <!-- 최종 결과 화면 -->
+    <section
+      id="resultScreen"
+      class="screen result-screen hidden"
+      aria-labelledby="resultHeading"
+    >
+      <div class="result-card">
+        <p class="success-icon" aria-hidden="true">
+          ✓
+        </p>
+
+        <h1 id="resultHeading">
+          모든 유전 문제를 해결하고 학교를 탈출했습니다!
+        </h1>
+
+        <p
+          id="resultGrade"
+          class="result-grade"
+        ></p>
+
+        <p>
+          다른 사람과의 순위가 아닌, 나의 학습 결과입니다.
+        </p>
+
+        <div
+          id="resultStats"
+          class="result-stats"
+        ></div>
+
+        <div class="button-row">
+          <button id="resultReviewBtn">
+            틀린 문제 다시 풀기
+          </button>
+
+          <button
+            id="resultRestartBtn"
+            class="primary"
+          >
+            처음부터 다시 시작하기
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 알림 메시지 -->
+  <div
+    id="toast"
+    class="toast hidden"
+    role="status"
+    aria-live="polite"
+  ></div>
+
+  <!-- 열쇠 획득 애니메이션 -->
+  <div
+    id="keyAnimation"
+    class="key-animation hidden"
+    aria-hidden="true"
+  >
+    🔑
+  </div>
+
+  <!-- 화면 전환 효과 -->
+  <div
+    id="transition"
+    class="transition hidden"
+    aria-hidden="true"
+  ></div>
+
+  <!-- 문제 모달 -->
+  <div
+    id="problemModal"
+    class="modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="problemTitle"
+  >
+    <div class="modal-card problem-card">
+      <button
+        class="modal-close"
+        data-close
+        aria-label="문제창 닫기"
+      >
+        ×
+      </button>
+
+      <p
+        id="problemMeta"
+        class="eyebrow"
+      ></p>
+
+      <h2 id="problemTitle"></h2>
+
+      <div id="problemVisual"></div>
+
+      <form id="answerForm">
+        <div id="answerArea"></div>
+
+        <div class="button-row">
+          <button
+            type="button"
+            id="hintBtn"
+          >
+            힌트 보기
+          </button>
+
+          <button
+            type="submit"
+            class="primary"
+          >
+            정답 확인
+          </button>
+        </div>
+      </form>
+
+      <div
+        id="feedback"
+        class="feedback hidden"
+        aria-live="polite"
+      ></div>
     </div>
+  </div>
 
-    <canvas
-        id="gameCanvas"
-        width="900"
-        height="560"
-        aria-label="유전학 학교 탐험 게임"
-    ></canvas>
+  <!-- 개념 카드 모달 -->
+  <div
+    id="conceptModal"
+    class="modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="conceptTitle"
+  >
+    <div class="modal-card">
+      <button
+        class="modal-close"
+        data-close
+        aria-label="닫기"
+      >
+        ×
+      </button>
 
-    <div id="hint">
-        방향키를 이용해 학교 입구로 이동하세요.
+      <h2 id="conceptTitle">개념 카드</h2>
+
+      <div id="conceptContent"></div>
     </div>
+  </div>
 
-    <p class="notice">
-        이 게임은 유전 원리를 이해하기 위한 교육용 단순화 모형입니다.
-    </p>
+  <!-- 게임 방법 모달 -->
+  <div
+    id="helpModal"
+    class="modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="helpTitle"
+  >
+    <div class="modal-card">
+      <button
+        class="modal-close"
+        data-close
+        aria-label="닫기"
+      >
+        ×
+      </button>
 
-    <div id="quizModal" class="quiz-modal hidden">
-        <section class="quiz-box">
-            <h2 id="quizTitle">유전학 퀴즈</h2>
+      <h2 id="helpTitle">게임 방법</h2>
 
-            <div id="concept" class="concept"></div>
-
-            <h3 id="question"></h3>
-
-            <div id="choices"></div>
-
-            <div id="feedback"></div>
-
-            <button id="returnButton" hidden>
-                복도로 돌아가기
-            </button>
-        </section>
+      <ul>
+        <li>방향키 또는 WASD로 이동합니다.</li>
+        <li>Enter 또는 Space 키로 사물과 문을 조사합니다.</li>
+        <li>스마트폰에서는 화면의 방향 버튼과 조사 버튼을 사용합니다.</li>
+        <li>빛나는 장소에 가까이 가면 문제를 풀 수 있습니다.</li>
+        <li>문제를 해결할 때마다 열쇠를 하나 얻습니다.</li>
+        <li>열쇠 5개를 모으면 다음 교실의 문을 열 수 있습니다.</li>
+        <li>힌트를 사용하면 해당 문제의 점수가 감소합니다.</li>
+        <li>틀린 문제는 다시 도전할 수 있습니다.</li>
+      </ul>
     </div>
-
-    <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-
-        const hint = document.getElementById("hint");
-        const sceneName = document.getElementById("sceneName");
-        const scoreText = document.getElementById("score");
-        const completedText = document.getElementById("completed");
-
-        const quizModal = document.getElementById("quizModal");
-        const quizTitle = document.getElementById("quizTitle");
-        const concept = document.getElementById("concept");
-        const question = document.getElementById("question");
-        const choices = document.getElementById("choices");
-        const feedback = document.getElementById("feedback");
-        const returnButton = document.getElementById("returnButton");
-
-        let scene = "outside";
-        let currentRoom = null;
-        let quizOpen = false;
-
-        let score = Number(
-            localStorage.getItem("genequestScore") || 0
-        );
-
-        const savedCompleted = JSON.parse(
-            localStorage.getItem("genequestCompleted") || "[]"
-        );
-
-        const completedRooms = new Set(savedCompleted);
-        const pressedKeys = {};
-
-        const player = {
-            x: 450,
-            y: 475,
-            speed: 4,
-            direction: "up",
-            moving: false,
-            frame: 0
-        };
-
-        const classroomDoors = [
-            {
-                key: "dominant",
-                x: 140,
-                label: "상염색체 우성"
-            },
-            {
-                key: "recessive",
-                x: 350,
-                label: "상염색체 열성"
-            },
-            {
-                key: "codominant",
-                x: 560,
-                label: "공동우성·복대립"
-            },
-            {
-                key: "xlinked",
-                x: 770,
-                label: "X염색체 연관"
-            }
-        ];
-
-        const quizData = {
-            dominant: {
-                title: "상염색체 우성 유전 교실",
-
-                concept:
-                    "상염색체 우성 유전은 상염색체에 위치한 관련 대립유전자 하나만 있어도 형질이 나타날 수 있는 유전 양식입니다.",
-
-                question:
-                    "한 부모의 유전자형이 Aa이고 다른 부모의 유전자형이 aa일 때, 자녀가 A를 물려받을 이론적 확률은?",
-
-                options: [
-                    "0%",
-                    "25%",
-                    "50%",
-                    "100%"
-                ],
-
-                answer: 2,
-
-                explanation:
-                    "Aa인 부모는 A와 a를 각각 50%의 확률로 전달하므로 정답은 50%입니다."
-            },
-
-            recessive: {
-                title: "상염색체 열성 유전 교실",
-
-                concept:
-                    "상염색체 열성 유전에서는 일반적으로 관련 대립유전자를 두 개 물려받아야 형질이 나타납니다. 관련 대립유전자를 하나만 가진 사람은 보인자가 될 수 있습니다.",
-
-                question:
-                    "두 부모가 모두 보인자 Aa일 때 자녀가 aa일 이론적 확률은?",
-
-                options: [
-                    "0%",
-                    "25%",
-                    "50%",
-                    "75%"
-                ],
-
-                answer: 1,
-
-                explanation:
-                    "Aa와 Aa의 조합은 AA, Aa, Aa, aa이므로 aa가 될 확률은 25%입니다."
-            },
-
-            codominant: {
-                title: "공동우성·복대립 유전 교실",
-
-                concept:
-                    "ABO 혈액형은 집단에 IA, IB, i라는 세 대립유전자가 존재하는 복대립 유전입니다. IA와 IB는 서로 공동우성이므로 두 대립유전자가 함께 있으면 모두 표현됩니다.",
-
-                question:
-                    "유전자형이 IAIB인 사람의 ABO 혈액형은 무엇일까요?",
-
-                options: [
-                    "A형",
-                    "B형",
-                    "AB형",
-                    "O형"
-                ],
-
-                answer: 2,
-
-                explanation:
-                    "IA와 IB가 모두 표현되므로 혈액형은 AB형입니다."
-            },
-
-            xlinked: {
-                title: "X염색체 연관 유전 교실",
-
-                concept:
-                    "혈우병 A는 대표적으로 X염색체 연관 열성 유전 양식으로 설명됩니다. 교육용 XX·XY 모형에서 아버지는 딸에게 X염색체를, 아들에게 Y염색체를 전달합니다.",
-
-                question:
-                    "교육용 XX·XY 모형에서 아버지의 X염색체는 누구에게 전달될까요?",
-
-                options: [
-                    "모든 아들",
-                    "모든 딸",
-                    "모든 아들과 딸",
-                    "어느 자녀에게도 전달되지 않음"
-                ],
-
-                answer: 1,
-
-                explanation:
-                    "아버지는 딸에게 X염색체를 전달하고 아들에게 Y염색체를 전달합니다."
-            }
-        };
-
-        function saveProgress() {
-            localStorage.setItem(
-                "genequestScore",
-                String(score)
-            );
-
-            localStorage.setItem(
-                "genequestCompleted",
-                JSON.stringify([...completedRooms])
-            );
-        }
-
-        function updateInformation() {
-            scoreText.textContent = score;
-            completedText.textContent = completedRooms.size;
-        }
-
-        function distance(x1, y1, x2, y2) {
-            return Math.hypot(x1 - x2, y1 - y2);
-        }
-
-        function drawPolygon(points, fillColor, strokeColor) {
-            ctx.beginPath();
-
-            points.forEach((point, index) => {
-                if (index === 0) {
-                    ctx.moveTo(point[0], point[1]);
-                } else {
-                    ctx.lineTo(point[0], point[1]);
-                }
-            });
-
-            ctx.closePath();
-            ctx.fillStyle = fillColor;
-            ctx.fill();
-
-            if (strokeColor) {
-                ctx.strokeStyle = strokeColor;
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            }
-        }
-
-        function drawTree(x, y, scale = 1) {
-            ctx.fillStyle = "#795548";
-            ctx.fillRect(
-                x - 9 * scale,
-                y,
-                18 * scale,
-                55 * scale
-            );
-
-            ctx.fillStyle = "#3e9948";
-
-            ctx.beginPath();
-            ctx.arc(
-                x,
-                y - 10 * scale,
-                38 * scale,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.arc(
-                x - 25 * scale,
-                y + 5 * scale,
-                27 * scale,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.arc(
-                x + 25 * scale,
-                y + 5 * scale,
-                27 * scale,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-        }
-
-        function drawOutside() {
-            sceneName.textContent = "현재 위치: 학교 앞";
-
-            // 하늘
-            ctx.fillStyle = "#bdeaff";
-            ctx.fillRect(0, 0, 900, 170);
-
-            // 운동장과 잔디
-            ctx.fillStyle = "#8fcf70";
-            ctx.fillRect(0, 170, 900, 390);
-
-            // 학교로 이어지는 길
-            drawPolygon(
-                [
-                    [345, 560],
-                    [390, 285],
-                    [510, 285],
-                    [555, 560]
-                ],
-                "#ded5bf",
-                "#bbb29e"
-            );
-
-            // 학교 정면
-            ctx.fillStyle = "#f5d69a";
-            ctx.fillRect(85, 60, 730, 230);
-
-            // 학교 옆면 효과
-            drawPolygon(
-                [
-                    [815, 60],
-                    [855, 85],
-                    [855, 275],
-                    [815, 290]
-                ],
-                "#d6aa6a",
-                "#936b45"
-            );
-
-            // 지붕
-            drawPolygon(
-                [
-                    [60, 60],
-                    [110, 28],
-                    [790, 28],
-                    [840, 60]
-                ],
-                "#526e86",
-                "#354b5e"
-            );
-
-            // 학교 간판
-            ctx.fillStyle = "#fff8e8";
-            ctx.fillRect(310, 76, 280, 50);
-
-            ctx.strokeStyle = "#8d6e63";
-            ctx.lineWidth = 3;
-            ctx.strokeRect(310, 76, 280, 50);
-
-            ctx.fillStyle = "#27384a";
-            ctx.font = "bold 26px Malgun Gothic";
-            ctx.textAlign = "center";
-            ctx.fillText(
-                "GeneQuest 고등학교",
-                450,
-                110
-            );
-
-            // 창문
-            const windowPositions = [125, 250, 575, 700];
-
-            windowPositions.forEach((x) => {
-                ctx.fillStyle = "#9bd7ed";
-                ctx.fillRect(x, 145, 82, 62);
-
-                ctx.strokeStyle = "white";
-                ctx.lineWidth = 5;
-                ctx.strokeRect(x, 145, 82, 62);
-
-                ctx.beginPath();
-                ctx.moveTo(x + 41, 145);
-                ctx.lineTo(x + 41, 207);
-                ctx.stroke();
-            });
-
-            // 학교 입구
-            ctx.fillStyle = "#825b45";
-            ctx.fillRect(390, 170, 120, 120);
-
-            ctx.strokeStyle = "#4e342e";
-            ctx.lineWidth = 5;
-            ctx.strokeRect(390, 170, 120, 120);
-
-            ctx.strokeStyle = "#d7ccc8";
-            ctx.lineWidth = 3;
-
-            ctx.beginPath();
-            ctx.moveTo(450, 170);
-            ctx.lineTo(450, 290);
-            ctx.stroke();
-
-            ctx.fillStyle = "#fff3c4";
-            ctx.font = "bold 18px Malgun Gothic";
-            ctx.fillText("학교 입구", 450, 240);
-
-            drawTree(75, 320, 1);
-            drawTree(825, 320, 1);
-            drawTree(120, 455, 0.85);
-            drawTree(780, 455, 0.85);
-        }
-
-        function drawHallway() {
-            sceneName.textContent =
-                "현재 위치: 학교 1층 유전학 복도";
-
-            // 뒷벽
-            ctx.fillStyle = "#fff4df";
-            ctx.fillRect(0, 0, 900, 185);
-
-            ctx.fillStyle = "#d9b0a2";
-            ctx.fillRect(0, 135, 900, 50);
-
-            // 바닥
-            drawPolygon(
-                [
-                    [30, 185],
-                    [870, 185],
-                    [900, 560],
-                    [0, 560]
-                ],
-                "#dfbd88",
-                "#ad8359"
-            );
-
-            // 원근감 있는 바닥선
-            ctx.strokeStyle = "rgba(105, 73, 45, 0.25)";
-            ctx.lineWidth = 2;
-
-            [250, 325, 410, 500].forEach((y) => {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(900, y);
-                ctx.stroke();
-            });
-
-            for (let x = 0; x <= 900; x += 90) {
-                ctx.beginPath();
-                ctx.moveTo(450, 185);
-                ctx.lineTo(x, 560);
-                ctx.stroke();
-            }
-
-            // 교실 문
-            classroomDoors.forEach((door) => {
-                const completed =
-                    completedRooms.has(door.key);
-
-                ctx.fillStyle = completed
-                    ? "#4caf50"
-                    : "#8d654f";
-
-                ctx.fillRect(
-                    door.x - 67,
-                    52,
-                    134,
-                    133
-                );
-
-                ctx.strokeStyle = "#4e342e";
-                ctx.lineWidth = 4;
-                ctx.strokeRect(
-                    door.x - 67,
-                    52,
-                    134,
-                    133
-                );
-
-                // 문 위 교실 이름표
-                ctx.fillStyle = completed
-                    ? "#dff7e3"
-                    : "#e8f4ff";
-
-                ctx.fillRect(
-                    door.x - 72,
-                    20,
-                    144,
-                    34
-                );
-
-                ctx.strokeStyle = "#546e7a";
-                ctx.lineWidth = 2;
-                ctx.strokeRect(
-                    door.x - 72,
-                    20,
-                    144,
-                    34
-                );
-
-                ctx.fillStyle = "#263238";
-                ctx.font = "bold 14px Malgun Gothic";
-                ctx.textAlign = "center";
-                ctx.fillText(
-                    door.label,
-                    door.x,
-                    43
-                );
-
-                ctx.fillStyle = "#f5d96b";
-                ctx.beginPath();
-                ctx.arc(
-                    door.x + 47,
-                    120,
-                    5,
-                    0,
-                    Math.PI * 2
-                );
-                ctx.fill();
-
-                if (completed) {
-                    ctx.fillStyle = "white";
-                    ctx.font = "bold 14px Malgun Gothic";
-                    ctx.fillText(
-                        "완료",
-                        door.x,
-                        160
-                    );
-                }
-            });
-
-            // 복도 안내판
-            ctx.fillStyle = "#2769a8";
-            ctx.fillRect(325, 220, 250, 55);
-
-            ctx.fillStyle = "white";
-            ctx.font = "bold 23px Malgun Gothic";
-            ctx.fillText(
-                "유전학 탐구 복도",
-                450,
-                255
-            );
-
-            // 학교 출구
-            ctx.fillStyle = "#546e7a";
-            ctx.fillRect(390, 515, 120, 45);
-
-            ctx.fillStyle = "white";
-            ctx.font = "bold 16px Malgun Gothic";
-            ctx.fillText(
-                "학교 밖으로",
-                450,
-                544
-            );
-
-            // 복도 화분
-            drawHallwayPlant(35, 190);
-            drawHallwayPlant(835, 190);
-        }
-
-        function drawHallwayPlant(x, y) {
-            ctx.fillStyle = "#a56d43";
-            ctx.fillRect(x, y, 34, 32);
-
-            ctx.fillStyle = "#4c9b55";
-
-            ctx.beginPath();
-            ctx.arc(x + 17, y - 8, 22, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.arc(x + 4, y, 15, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.arc(x + 30, y, 15, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        function drawWindow(x, y) {
-            ctx.fillStyle = "#a8dcf3";
-            ctx.fillRect(x, y, 105, 125);
-
-            ctx.strokeStyle = "#a86f4b";
-            ctx.lineWidth = 7;
-            ctx.strokeRect(x, y, 105, 125);
-
-            ctx.lineWidth = 4;
-
-            ctx.beginPath();
-            ctx.moveTo(x + 52, y);
-            ctx.lineTo(x + 52, y + 125);
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.moveTo(x, y + 62);
-            ctx.lineTo(x + 105, y + 62);
-            ctx.stroke();
-
-            ctx.fillStyle = "#7bc96a";
-
-            ctx.beginPath();
-            ctx.arc(
-                x + 28,
-                y + 102,
-                23,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.arc(
-                x + 75,
-                y + 98,
-                26,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-        }
-
-        function drawClassroomDesk(x, y, scale = 1) {
-            // 의자 등받이
-            ctx.fillStyle = "#a8794f";
-            ctx.fillRect(
-                x + 48 * scale,
-                y - 24 * scale,
-                42 * scale,
-                35 * scale
-            );
-
-            ctx.strokeStyle = "#6d4c41";
-            ctx.lineWidth = 3;
-            ctx.strokeRect(
-                x + 48 * scale,
-                y - 24 * scale,
-                42 * scale,
-                35 * scale
-            );
-
-            // 책상 윗면
-            drawPolygon(
-                [
-                    [x, y],
-                    [x + 95 * scale, y],
-                    [
-                        x + 112 * scale,
-                        y + 20 * scale
-                    ],
-                    [
-                        x + 17 * scale,
-                        y + 20 * scale
-                    ]
-                ],
-                "#e7bd80",
-                "#8d6e63"
-            );
-
-            // 책상 앞면
-            drawPolygon(
-                [
-                    [
-                        x + 17 * scale,
-                        y + 20 * scale
-                    ],
-                    [
-                        x + 112 * scale,
-                        y + 20 * scale
-                    ],
-                    [
-                        x + 112 * scale,
-                        y + 35 * scale
-                    ],
-                    [
-                        x + 17 * scale,
-                        y + 35 * scale
-                    ]
-                ],
-                "#c8945e",
-                "#8d6e63"
-            );
-
-            // 책상 다리
-            ctx.fillStyle = "#777";
-
-            ctx.fillRect(
-                x + 23 * scale,
-                y + 34 * scale,
-                6 * scale,
-                35 * scale
-            );
-
-            ctx.fillRect(
-                x + 99 * scale,
-                y + 34 * scale,
-                6 * scale,
-                35 * scale
-            );
-        }
-
-        function drawClassroom() {
-            const room = quizData[currentRoom];
-
-            sceneName.textContent =
-                "현재 위치: " + room.title;
-
-            // 뒷벽
-            ctx.fillStyle = "#fff6e6";
-            ctx.fillRect(0, 0, 900, 205);
-
-            ctx.fillStyle = "#d9b3a6";
-            ctx.fillRect(0, 145, 900, 60);
-
-            // 원근감 있는 나무 바닥
-            drawPolygon(
-                [
-                    [45, 205],
-                    [855, 205],
-                    [900, 560],
-                    [0, 560]
-                ],
-                "#deb77f",
-                "#a98259"
-            );
-
-            ctx.strokeStyle =
-                "rgba(120, 80, 45, 0.3)";
-            ctx.lineWidth = 2;
-
-            [255, 320, 395, 480].forEach((y) => {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(900, y);
-                ctx.stroke();
-            });
-
-            for (let x = 0; x <= 900; x += 90) {
-                ctx.beginPath();
-                ctx.moveTo(450, 205);
-                ctx.lineTo(x, 560);
-                ctx.stroke();
-            }
-
-            // 칠판
-            ctx.fillStyle = "#285849";
-            ctx.fillRect(105, 48, 335, 115);
-
-            ctx.strokeStyle = "#8d6e63";
-            ctx.lineWidth = 9;
-            ctx.strokeRect(105, 48, 335, 115);
-
-            ctx.fillStyle = "white";
-            ctx.font = "bold 22px Malgun Gothic";
-            ctx.textAlign = "center";
-            ctx.fillText(
-                room.title,
-                272,
-                112
-            );
-
-            // 칠판 위 스크린
-            ctx.fillStyle = "#f5f5f5";
-            ctx.fillRect(125, 18, 295, 28);
-
-            // 시계
-            ctx.fillStyle = "white";
-            ctx.strokeStyle = "#555";
-            ctx.lineWidth = 4;
-
-            ctx.beginPath();
-            ctx.arc(65, 45, 22, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.moveTo(65, 45);
-            ctx.lineTo(65, 32);
-            ctx.moveTo(65, 45);
-            ctx.lineTo(76, 52);
-            ctx.stroke();
-
-            // 오른쪽 창문
-            drawWindow(660, 25);
-            drawWindow(780, 25);
-
-            // 교탁
-            drawPolygon(
-                [
-                    [500, 170],
-                    [640, 170],
-                    [665, 195],
-                    [525, 195]
-                ],
-                "#c9945f",
-                "#70492e"
-            );
-
-            ctx.fillStyle = "#a87445";
-            ctx.fillRect(525, 195, 140, 45);
-
-            // 교탁 위 모니터
-            ctx.fillStyle = "#333";
-            ctx.fillRect(550, 125, 70, 47);
-
-            ctx.fillStyle = "#555";
-            ctx.fillRect(582, 172, 7, 18);
-
-            // 학생 책상
-            const desks = [
-                [115, 275],
-                [345, 275],
-                [575, 275],
-                [80, 365],
-                [310, 365],
-                [540, 365],
-                [45, 455],
-                [275, 455],
-                [505, 455],
-                [700, 430]
-            ];
-
-            desks.forEach(([x, y]) => {
-                drawClassroomDesk(x, y, 0.82);
-            });
-
-            // 화분
-            ctx.fillStyle = "#9b6b43";
-            ctx.fillRect(25, 170, 50, 35);
-
-            ctx.fillStyle = "#4a9b52";
-
-            ctx.beginPath();
-            ctx.arc(50, 160, 26, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.arc(33, 150, 18, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.arc(67, 148, 18, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        function drawFluffyCircle(x, y, radius) {
-            const points = 48;
-
-            ctx.beginPath();
-
-            for (let i = 0; i <= points; i++) {
-                const angle =
-                    (Math.PI * 2 * i) / points;
-
-                const fluff =
-                    Math.sin(i * 2.7) * 1.5 +
-                    Math.sin(i * 5.1) * 0.8;
-
-                const currentRadius =
-                    radius + fluff;
-
-                const px =
-                    x +
-                    Math.cos(angle) *
-                    currentRadius;
-
-                const py =
-                    y +
-                    Math.sin(angle) *
-                    currentRadius;
-
-                if (i === 0) {
-                    ctx.moveTo(px, py);
-                } else {
-                    ctx.lineTo(px, py);
-                }
-            }
-
-            ctx.closePath();
-            ctx.fillStyle = "#fffefa";
-            ctx.fill();
-
-            ctx.strokeStyle = "#171717";
-            ctx.lineWidth = 4;
-            ctx.stroke();
-        }
-
-        function drawBichonBody() {
-            ctx.beginPath();
-            ctx.moveTo(-24, -2);
-
-            ctx.bezierCurveTo(
-                -35,
-                10,
-                -32,
-                42,
-                -19,
-                51
-            );
-
-            ctx.bezierCurveTo(
-                -9,
-                58,
-                -4,
-                43,
-                0,
-                34
-            );
-
-            ctx.bezierCurveTo(
-                4,
-                43,
-                9,
-                58,
-                19,
-                51
-            );
-
-            ctx.bezierCurveTo(
-                32,
-                42,
-                35,
-                10,
-                24,
-                -2
-            );
-
-            ctx.closePath();
-            ctx.fillStyle = "#fffefa";
-            ctx.fill();
-
-            ctx.strokeStyle = "#171717";
-            ctx.lineWidth = 4;
-            ctx.stroke();
-        }
-
-        function drawFrontBichon(walk) {
-            drawBichonBody();
-
-            ctx.fillStyle = "#fffefa";
-            ctx.strokeStyle = "#171717";
-            ctx.lineWidth = 4;
-
-            // 왼쪽 앞발
-            ctx.beginPath();
-            ctx.ellipse(
-                -16,
-                43 + walk,
-                12,
-                18,
-                0,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-            ctx.stroke();
-
-            // 오른쪽 앞발
-            ctx.beginPath();
-            ctx.ellipse(
-                16,
-                43 - walk,
-                12,
-                18,
-                0,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-            ctx.stroke();
-
-            // 큰 머리
-            drawFluffyCircle(0, -24, 47);
-
-            // 눈
-            ctx.fillStyle = "#111";
-
-            ctx.beginPath();
-            ctx.arc(
-                -13,
-                -28,
-                4.5,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.arc(
-                13,
-                -28,
-                4.5,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-
-            // 입 주변 선
-            ctx.strokeStyle = "#111";
-            ctx.lineWidth = 4;
-
-            ctx.beginPath();
-            ctx.arc(
-                0,
-                -17,
-                24,
-                Math.PI * 1.15,
-                Math.PI * 1.85
-            );
-            ctx.stroke();
-
-            // 코
-            ctx.fillStyle = "#111";
-
-            ctx.beginPath();
-            ctx.ellipse(
-                0,
-                -14,
-                9,
-                7,
-                0,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-
-            // 입
-            ctx.strokeStyle = "#111";
-            ctx.lineWidth = 3;
-
-            ctx.beginPath();
-            ctx.moveTo(0, -8);
-            ctx.lineTo(0, -2);
-            ctx.stroke();
-
-            // 혀
-            ctx.fillStyle = "#ff9eac";
-
-            ctx.beginPath();
-            ctx.arc(
-                0,
-                0,
-                9,
-                0,
-                Math.PI
-            );
-            ctx.fill();
-
-            ctx.strokeStyle = "#111";
-            ctx.stroke();
-        }
-
-        function drawBackBichon(walk) {
-            drawBichonBody();
-
-            ctx.fillStyle = "#fffefa";
-            ctx.strokeStyle = "#171717";
-            ctx.lineWidth = 4;
-
-            ctx.beginPath();
-            ctx.ellipse(
-                -16,
-                43 + walk,
-                12,
-                17,
-                0,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.ellipse(
-                16,
-                43 - walk,
-                12,
-                17,
-                0,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-            ctx.stroke();
-
-            // 꼬리
-            drawFluffyCircle(24, 13, 13);
-
-            // 뒤에서 본 머리
-            drawFluffyCircle(0, -24, 47);
-
-            // 귀 뒷부분
-            ctx.fillStyle = "#ded4ca";
-
-            ctx.beginPath();
-            ctx.ellipse(
-                -29,
-                -20,
-                7,
-                15,
-                -0.3,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.ellipse(
-                29,
-                -20,
-                7,
-                15,
-                0.3,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-        }
-
-        function drawSideBichon(walk) {
-            // 몸통
-            ctx.beginPath();
-            ctx.ellipse(
-                -10,
-                12,
-                35,
-                28,
-                0,
-                0,
-                Math.PI * 2
-            );
-
-            ctx.fillStyle = "#fffefa";
-            ctx.fill();
-
-            ctx.strokeStyle = "#171717";
-            ctx.lineWidth = 4;
-            ctx.stroke();
-
-            // 꼬리
-            drawFluffyCircle(-39, -2, 14);
-
-            // 다리
-            ctx.fillStyle = "#fffefa";
-
-            ctx.beginPath();
-            ctx.ellipse(
-                -22 + walk,
-                34,
-                11,
-                18,
-                0,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.ellipse(
-                10 - walk,
-                34,
-                11,
-                18,
-                0,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-            ctx.stroke();
-
-            // 머리
-            drawFluffyCircle(25, -20, 45);
-
-            // 눈
-            ctx.fillStyle = "#111";
-
-            ctx.beginPath();
-            ctx.arc(
-                37,
-                -25,
-                4.5,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-
-            // 코
-            ctx.beginPath();
-            ctx.ellipse(
-                66,
-                -15,
-                7,
-                6,
-                0,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-
-            // 입
-            ctx.strokeStyle = "#111";
-            ctx.lineWidth = 3;
-
-            ctx.beginPath();
-            ctx.moveTo(60, -9);
-            ctx.quadraticCurveTo(
-                54,
-                0,
-                46,
-                -3
-            );
-            ctx.stroke();
-
-            // 혀
-            ctx.fillStyle = "#ff9eac";
-
-            ctx.beginPath();
-            ctx.ellipse(
-                52,
-                1,
-                6,
-                8,
-                0,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-
-            ctx.strokeStyle = "#111";
-            ctx.stroke();
-        }
-
-        function drawBichon(x, y) {
-            const walk = player.moving
-                ? Math.sin(player.frame) * 4
-                : 0;
-
-            const bounce = player.moving
-                ? -Math.abs(
-                    Math.sin(player.frame)
-                ) * 2
-                : 0;
-
-            ctx.save();
-            ctx.translate(x, y + bounce);
-
-            // 그림자
-            ctx.fillStyle =
-                "rgba(80, 55, 40, 0.18)";
-
-            ctx.beginPath();
-            ctx.ellipse(
-                0,
-                45,
-                37,
-                12,
-                0,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-
-            if (player.direction === "left") {
-                ctx.scale(-0.72, 0.72);
-                drawSideBichon(walk);
-            } else {
-                ctx.scale(0.72, 0.72);
-
-                if (
-                    player.direction === "right"
-                ) {
-                    drawSideBichon(walk);
-                } else if (
-                    player.direction === "up"
-                ) {
-                    drawBackBichon(walk);
-                } else {
-                    drawFrontBichon(walk);
-                }
-            }
-
-            ctx.restore();
-        }
-
-        function updatePlayer() {
-            if (quizOpen) {
-                player.moving = false;
-                return;
-            }
-
-            let dx = 0;
-            let dy = 0;
-
-            if (pressedKeys.ArrowLeft) {
-                dx -= player.speed;
-                player.direction = "left";
-            }
-
-            if (pressedKeys.ArrowRight) {
-                dx += player.speed;
-                player.direction = "right";
-            }
-
-            if (pressedKeys.ArrowUp) {
-                dy -= player.speed;
-                player.direction = "up";
-            }
-
-            if (pressedKeys.ArrowDown) {
-                dy += player.speed;
-                player.direction = "down";
-            }
-
-            player.moving =
-                dx !== 0 || dy !== 0;
-
-            if (player.moving) {
-                player.frame += 0.22;
-            } else {
-                player.frame = 0;
-            }
-
-            if (dx !== 0 && dy !== 0) {
-                dx *= 0.71;
-                dy *= 0.71;
-            }
-
-            player.x += dx;
-            player.y += dy;
-
-            let minimumY = 300;
-
-            if (scene === "hallway") {
-                minimumY = 180;
-            }
-
-            if (scene === "classroom") {
-                minimumY = 220;
-            }
-
-            player.x = Math.max(
-                35,
-                Math.min(865, player.x)
-            );
-
-            player.y = Math.max(
-                minimumY,
-                Math.min(525, player.y)
-            );
-        }
-
-        function updateHint() {
-            if (quizOpen) {
-                hint.textContent =
-                    "퀴즈를 풀고 있습니다.";
-                return;
-            }
-
-            if (scene === "outside") {
-                const nearEntrance =
-                    distance(
-                        player.x,
-                        player.y,
-                        450,
-                        300
-                    ) < 80;
-
-                hint.textContent = nearEntrance
-                    ? "학교 입구입니다. Enter 키를 눌러 들어가세요."
-                    : "방향키로 비숑을 움직여 학교 입구로 이동하세요.";
-            }
-
-            if (scene === "hallway") {
-                const nearbyDoor =
-                    classroomDoors.find((door) =>
-                        distance(
-                            player.x,
-                            player.y,
-                            door.x,
-                            190
-                        ) < 78
-                    );
-
-                const nearExit =
-                    distance(
-                        player.x,
-                        player.y,
-                        450,
-                        520
-                    ) < 75;
-
-                if (nearbyDoor) {
-                    hint.textContent =
-                        nearbyDoor.label +
-                        " 교실입니다. Enter 키를 눌러 들어가세요.";
-                } else if (nearExit) {
-                    hint.textContent =
-                        "학교 출구입니다. Enter 키를 누르면 학교 밖으로 나갑니다.";
-                } else {
-                    hint.textContent =
-                        "원하는 교실 문 앞으로 이동한 뒤 Enter 키를 누르세요.";
-                }
-            }
-        }
-
-        function interact() {
-            if (quizOpen) {
-                return;
-            }
-
-            if (scene === "outside") {
-                const nearEntrance =
-                    distance(
-                        player.x,
-                        player.y,
-                        450,
-                        300
-                    ) < 80;
-
-                if (nearEntrance) {
-                    scene = "hallway";
-
-                    player.x = 450;
-                    player.y = 440;
-                    player.direction = "up";
-                }
-
-                return;
-            }
-
-            if (scene === "hallway") {
-                const nearExit =
-                    distance(
-                        player.x,
-                        player.y,
-                        450,
-                        520
-                    ) < 75;
-
-                if (nearExit) {
-                    scene = "outside";
-
-                    player.x = 450;
-                    player.y = 350;
-                    player.direction = "down";
-
-                    return;
-                }
-
-                const nearbyDoor =
-                    classroomDoors.find((door) =>
-                        distance(
-                            player.x,
-                            player.y,
-                            door.x,
-                            190
-                        ) < 78
-                    );
-
-                if (nearbyDoor) {
-                    enterClassroom(
-                        nearbyDoor.key
-                    );
-                }
-            }
-        }
-
-        function enterClassroom(roomKey) {
-            currentRoom = roomKey;
-            scene = "classroom";
-
-            player.x = 450;
-            player.y = 490;
-            player.direction = "up";
-
-            // 교실 내부가 잠깐 보인 후 퀴즈 표시
-            window.setTimeout(() => {
-                openQuiz(roomKey);
-            }, 350);
-        }
-
-        function openQuiz(roomKey) {
-            const quiz = quizData[roomKey];
-
-            quizOpen = true;
-            quizModal.classList.remove("hidden");
-
-            quizTitle.textContent = quiz.title;
-            concept.textContent = quiz.concept;
-
-            question.textContent =
-                "Q. " + quiz.question;
-
-            choices.innerHTML = "";
-            feedback.textContent = "";
-            returnButton.hidden = true;
-
-            quiz.options.forEach(
-                (option, index) => {
-                    const button =
-                        document.createElement(
-                            "button"
-                        );
-
-                    button.className = "choice";
-
-                    button.textContent =
-                        (index + 1) +
-                        ". " +
-                        option;
-
-                    button.addEventListener(
-                        "click",
-                        () => {
-                            checkAnswer(index);
-                        }
-                    );
-
-                    choices.appendChild(button);
-                }
-            );
-        }
-
-        function checkAnswer(selectedIndex) {
-            const quiz = quizData[currentRoom];
-
-            const buttons =
-                document.querySelectorAll(
-                    ".choice"
-                );
-
-            buttons.forEach((button) => {
-                button.disabled = true;
-            });
-
-            buttons[
-                quiz.answer
-            ].classList.add("correct");
-
-            if (selectedIndex === quiz.answer) {
-                feedback.textContent =
-                    "정답입니다! +10점 " +
-                    quiz.explanation;
-
-                // 이미 완료한 교실에서는 점수 중복 방지
-                if (
-                    !completedRooms.has(
-                        currentRoom
-                    )
-                ) {
-                    score += 10;
-                }
-            } else {
-                buttons[
-                    selectedIndex
-                ].classList.add("wrong");
-
-                feedback.textContent =
-                    "정답을 확인해 보세요. " +
-                    quiz.explanation;
-            }
-
-            completedRooms.add(currentRoom);
-
-            saveProgress();
-            updateInformation();
-
-            returnButton.hidden = false;
-        }
-
-        returnButton.addEventListener(
-            "click",
-            () => {
-                quizModal.classList.add(
-                    "hidden"
-                );
-
-                quizOpen = false;
-                scene = "hallway";
-
-                const door =
-                    classroomDoors.find(
-                        (item) =>
-                            item.key ===
-                            currentRoom
-                    );
-
-                player.x = door.x;
-                player.y = 235;
-                player.direction = "down";
-
-                currentRoom = null;
-            }
-        );
-
-        window.addEventListener(
-            "keydown",
-            (event) => {
-                const arrowKeys = [
-                    "ArrowUp",
-                    "ArrowDown",
-                    "ArrowLeft",
-                    "ArrowRight"
-                ];
-
-                if (
-                    arrowKeys.includes(event.key)
-                ) {
-                    event.preventDefault();
-                    pressedKeys[event.key] = true;
-                }
-
-                if (
-                    event.key === "Enter" &&
-                    !event.repeat
-                ) {
-                    interact();
-                }
-            }
-        );
-
-        window.addEventListener(
-            "keyup",
-            (event) => {
-                pressedKeys[event.key] = false;
-            }
-        );
-
-        window.addEventListener(
-            "blur",
-            () => {
-                Object.keys(
-                    pressedKeys
-                ).forEach((key) => {
-                    pressedKeys[key] = false;
-                });
-
-                player.moving = false;
-            }
-        );
-
-        function gameLoop() {
-            updatePlayer();
-
-            ctx.clearRect(
-                0,
-                0,
-                canvas.width,
-                canvas.height
-            );
-
-            if (scene === "outside") {
-                drawOutside();
-            } else if (scene === "hallway") {
-                drawHallway();
-            } else if (
-                scene === "classroom"
-            ) {
-                drawClassroom();
-            }
-
-            drawBichon(
-                player.x,
-                player.y
-            );
-
-            updateHint();
-
-            requestAnimationFrame(gameLoop);
-        }
-
-        updateInformation();
-        gameLoop();
-    </script>
+  </div>
+
+  <!-- 학습 내용 모달 -->
+  <div
+    id="learningModal"
+    class="modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="learningTitle"
+  >
+    <div class="modal-card">
+      <button
+        class="modal-close"
+        data-close
+        aria-label="닫기"
+      >
+        ×
+      </button>
+
+      <h2 id="learningTitle">학습 내용</h2>
+
+      <p>
+        DNA·유전자·염색체, 가계도, ABO 혈액형,
+        X 염색체 연관 유전과 퍼넷 사각형을 학습합니다.
+      </p>
+
+      <p class="notice">
+        단순한 유전 모형은 사람의 모든 특징을 설명하지 않습니다.
+        혈액형이나 가계도만으로 실제 개인의 친자 관계나 질환을
+        확정할 수도 없습니다.
+      </p>
+    </div>
+  </div>
+
+  <!-- 메뉴 모달 -->
+  <div
+    id="menuModal"
+    class="modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="menuTitle"
+  >
+    <div class="modal-card">
+      <button
+        class="modal-close"
+        data-close
+        aria-label="닫기"
+      >
+        ×
+      </button>
+
+      <h2 id="menuTitle">메뉴</h2>
+
+      <div class="menu-list">
+        <button id="conceptBtn">
+          현재 교실 개념 카드
+        </button>
+
+        <button id="reviewBtn">
+          복습 노트
+        </button>
+
+        <button id="saveBtn">
+          수동 저장
+        </button>
+
+        <button id="restartBtn">
+          처음부터 다시 시작
+        </button>
+
+        <button
+          id="deleteBtn"
+          class="danger"
+        >
+          저장 기록 삭제
+        </button>
+
+        <button id="homeBtn">
+          시작 화면으로
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 복습 노트 모달 -->
+  <div
+    id="reviewModal"
+    class="modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="reviewTitle"
+  >
+    <div class="modal-card wide">
+      <button
+        class="modal-close"
+        data-close
+        aria-label="닫기"
+      >
+        ×
+      </button>
+
+      <h2 id="reviewTitle">복습 노트</h2>
+
+      <div id="reviewList"></div>
+    </div>
+  </div>
+
+  <!-- 확인 대화상자 -->
+  <div
+    id="confirmModal"
+    class="modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="confirmTitle"
+  >
+    <div class="modal-card small">
+      <h2 id="confirmTitle">확인</h2>
+
+      <p id="confirmText"></p>
+
+      <div class="button-row">
+        <button id="confirmCancel">
+          취소
+        </button>
+
+        <button
+          id="confirmOk"
+          class="danger"
+        >
+          확인
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 스크린 리더용 상태 안내 -->
+  <div
+    id="accessibleStatus"
+    class="sr-only"
+    aria-live="assertive"
+  ></div>
+
+  <script src="script.js" defer></script>
 </body>
 </html>
