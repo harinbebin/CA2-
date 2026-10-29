@@ -1026,3 +1026,2170 @@
           document.getElementById("reviewModal")
         );
       });
+    document
+      .getElementById("saveBtn")
+      .addEventListener("click", () => {
+        save();
+        showToast("진행 상황을 저장했습니다.");
+      });
+
+    document
+      .getElementById("restartBtn")
+      .addEventListener("click", () => {
+        askConfirm(
+          "모든 진행 기록을 지우고 처음부터 다시 시작할까요?",
+          startNew
+        );
+      });
+
+    document
+      .getElementById("deleteBtn")
+      .addEventListener("click", () => {
+        askConfirm(
+          "저장 기록을 삭제할까요? 삭제 후 복구할 수 없습니다.",
+          deleteSave
+        );
+      });
+
+    document
+      .getElementById("homeBtn")
+      .addEventListener("click", () => {
+        closeModal();
+        showStart();
+      });
+
+    document
+      .getElementById("resultRestartBtn")
+      .addEventListener("click", () => {
+        askConfirm(
+          "결과를 지우고 처음부터 다시 시작할까요?",
+          startNew
+        );
+      });
+
+    document
+      .getElementById("resultReviewBtn")
+      .addEventListener("click", () => {
+        renderReview();
+
+        openModal(
+          document.getElementById("reviewModal")
+        );
+      });
+
+    [
+      dom.soundBtn,
+      dom.startSoundBtn
+    ].forEach(button => {
+      button.addEventListener("click", toggleSound);
+    });
+
+    dom.answerForm.addEventListener(
+      "submit",
+      submitAnswer
+    );
+
+    dom.hintBtn.addEventListener(
+      "click",
+      showHint
+    );
+
+    dom.mobileInteract.addEventListener(
+      "click",
+      interact
+    );
+
+    dom.door.addEventListener(
+      "click",
+      interactDoor
+    );
+
+    dom.confirmCancel.addEventListener(
+      "click",
+      closeModal
+    );
+
+    dom.confirmOk.addEventListener("click", () => {
+      const action = confirmAction;
+
+      closeModal();
+
+      if (action) {
+        action();
+      }
+    });
+
+    document.addEventListener(
+      "keydown",
+      keyDown
+    );
+
+    document.addEventListener("keyup", event => {
+      held.delete(event.key.toLowerCase());
+    });
+
+    window.addEventListener("blur", () => {
+      held.clear();
+    });
+
+    window.addEventListener("resize", () => {
+      state.player.x = clamp(
+        state.player.x,
+        4,
+        96
+      );
+
+      state.player.y = clamp(
+        state.player.y,
+        5,
+        94
+      );
+
+      renderPlayer();
+    });
+
+    document
+      .querySelectorAll("[data-direction]")
+      .forEach(button => {
+        const direction =
+          button.dataset.direction;
+
+        [
+          "pointerdown",
+          "touchstart"
+        ].forEach(eventName => {
+          button.addEventListener(
+            eventName,
+            event => {
+              event.preventDefault();
+              held.add(direction);
+            },
+            {
+              passive: false
+            }
+          );
+        });
+
+        [
+          "pointerup",
+          "pointercancel",
+          "pointerleave",
+          "touchend"
+        ].forEach(eventName => {
+          button.addEventListener(
+            eventName,
+            () => {
+              held.delete(direction);
+            }
+          );
+        });
+      });
+
+    document
+      .querySelectorAll(".modal")
+      .forEach(modal => {
+        modal.addEventListener(
+          "mousedown",
+          event => {
+            if (
+              event.target === modal &&
+              modal.id !== "confirmModal"
+            ) {
+              closeModal();
+            }
+          }
+        );
+      });
+
+    window.addEventListener(
+      "beforeunload",
+      () => {
+        if (state.started) {
+          save();
+        }
+      }
+    );
+  }
+
+  function keyDown(event) {
+    const key = event.key.toLowerCase();
+
+    if (activeModal) {
+      if (
+        event.key === "Escape" &&
+        activeModal.id !== "confirmModal"
+      ) {
+        closeModal();
+      }
+
+      if (event.key === "Tab") {
+        trapFocus(event);
+      }
+
+      return;
+    }
+
+    if (
+      !dom.gameScreen.classList.contains(
+        "hidden"
+      )
+    ) {
+      const controlledKeys = [
+        "arrowup",
+        "arrowdown",
+        "arrowleft",
+        "arrowright",
+        "w",
+        "a",
+        "s",
+        "d",
+        "enter",
+        " "
+      ];
+
+      if (controlledKeys.includes(key)) {
+        event.preventDefault();
+      }
+
+      if (
+        key === "enter" ||
+        key === " "
+      ) {
+        interact();
+      } else {
+        held.add(key);
+      }
+    }
+  }
+
+  function trapFocus(event) {
+    const focusableElements = [
+      ...activeModal.querySelectorAll(
+        "button, input, select, " +
+        "[tabindex]:not([tabindex='-1'])"
+      )
+    ].filter(element => !element.disabled);
+
+    if (!focusableElements.length) {
+      return;
+    }
+
+    const firstElement =
+      focusableElements[0];
+
+    const lastElement =
+      focusableElements[
+        focusableElements.length - 1
+      ];
+
+    if (
+      event.shiftKey &&
+      document.activeElement === firstElement
+    ) {
+      event.preventDefault();
+      lastElement.focus();
+    } else if (
+      !event.shiftKey &&
+      document.activeElement === lastElement
+    ) {
+      event.preventDefault();
+      firstElement.focus();
+    }
+  }
+
+  function openModal(modal) {
+    if (!modal) {
+      return;
+    }
+
+    previousFocus = document.activeElement;
+    activeModal = modal;
+
+    modal.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+
+    held.clear();
+
+    setTimeout(() => {
+      const firstFocusable =
+        modal.querySelector(
+          "button, input, select"
+        );
+
+      if (firstFocusable) {
+        firstFocusable.focus();
+      }
+    }, 0);
+  }
+
+  function closeModal() {
+    if (!activeModal) {
+      return;
+    }
+
+    activeModal.classList.add("hidden");
+    activeModal = null;
+
+    document.body.style.overflow = "";
+
+    currentQuestion = null;
+    reviewMode = false;
+
+    if (
+      previousFocus &&
+      document.contains(previousFocus)
+    ) {
+      previousFocus.focus();
+    }
+  }
+
+  function askConfirm(text, action) {
+    confirmAction = action;
+    dom.confirmText.textContent = text;
+
+    openModal(dom.confirmModal);
+  }
+
+  function startNew() {
+    state = defaultState();
+    state.started = true;
+
+    save();
+    showGame();
+
+    showToast(
+      "학교에서 진행되는 유전 학습 방탈출 활동이 시작되었습니다. " +
+      "교실에 숨겨진 유전 문제를 해결하면 문을 열 수 있는 열쇠를 얻습니다. " +
+      "모든 교실을 통과해 학교 밖으로 나가세요."
+    );
+  }
+
+  function deleteSave() {
+    localStorage.removeItem(STORAGE_KEY);
+
+    state = defaultState();
+
+    updateContinue();
+    showStart();
+    showToast("저장 기록을 삭제했습니다.");
+  }
+
+  function showStart() {
+    dom.startScreen.classList.remove(
+      "hidden"
+    );
+
+    dom.gameScreen.classList.add(
+      "hidden"
+    );
+
+    dom.resultScreen.classList.add(
+      "hidden"
+    );
+
+    updateContinue();
+  }
+
+  function showGame() {
+    dom.startScreen.classList.add(
+      "hidden"
+    );
+
+    dom.gameScreen.classList.remove(
+      "hidden"
+    );
+
+    dom.resultScreen.classList.add(
+      "hidden"
+    );
+
+    renderRoom();
+  }
+
+  function renderRoom() {
+    const room = rooms[state.currentRoom];
+
+    dom.roomName.textContent = room.name;
+
+    dom.roomKeyLabel.textContent =
+      `${ROOM_ORDER.indexOf(
+        state.currentRoom
+      ) + 1}교실 ${room.keyName}`;
+
+    dom.doorLabel.textContent =
+      state.currentRoom === "final"
+        ? "학교 출구"
+        : "다음 교실";
+
+    dom.map.className =
+      `game-map room-${state.currentRoom}`;
+
+    setRoomImage(room.image);
+    renderHotspots();
+    renderPlayer();
+    updateHud();
+    updateDoor();
+    renderConcept();
+  }
+
+  function setStartImage() {
+    const image = new Image();
+
+    image.onload = () => {
+      dom.startScreen.style.backgroundImage =
+        "linear-gradient(" +
+        "rgba(223,246,252,.25)," +
+        "rgba(241,223,173,.35)" +
+        '),url("assets/school-entrance.png")';
+
+      dom.startScreen.style.backgroundSize =
+        "cover";
+
+      dom.startScreen.style.backgroundPosition =
+        "center";
+    };
+
+    image.onerror = () => {
+      dom.startScreen.style.backgroundImage =
+        "";
+    };
+
+    image.src =
+      "assets/school-entrance.png";
+  }
+
+  function setRoomImage(fileName) {
+    const image = new Image();
+
+    image.onload = () => {
+      dom.map.style.backgroundImage =
+        `url("assets/${fileName}")`;
+
+      dom.map.classList.add("has-image");
+    };
+
+    image.onerror = () => {
+      dom.map.style.backgroundImage = "";
+      dom.map.classList.remove("has-image");
+    };
+
+    image.src = `assets/${fileName}`;
+  }
+
+  function configureSprite() {
+    const spriteReady = () => {
+      dom.player.style.backgroundImage =
+        'url("assets/bichon-sprite.png")';
+
+      dom.player.classList.add(
+        "sprite-ready"
+      );
+    };
+
+    const spriteFailed = () => {
+      dom.player.style.backgroundImage = "";
+
+      dom.player.classList.remove(
+        "sprite-ready"
+      );
+    };
+
+    dom.playerSprite.addEventListener(
+      "load",
+      spriteReady
+    );
+
+    dom.playerSprite.addEventListener(
+      "error",
+      spriteFailed
+    );
+
+    if (
+      dom.playerSprite.complete &&
+      dom.playerSprite.naturalWidth
+    ) {
+      spriteReady();
+    }
+  }
+
+  function renderHotspots() {
+    dom.hotspots.replaceChildren();
+
+    roomQuestions(state.currentRoom)
+      .forEach((question, index) => {
+        const button =
+          document.createElement("button");
+
+        const completed =
+          state.completedQuestions.includes(
+            question.id
+          );
+
+        button.className =
+          "hotspot" +
+          (completed ? " completed" : "");
+
+        button.style.left =
+          `${hotspotPositions[index].x}%`;
+
+        button.style.top =
+          `${hotspotPositions[index].y}%`;
+
+        button.dataset.questionId =
+          question.id;
+
+        button.setAttribute(
+          "aria-label",
+          `${index + 1}번 조사 지점` +
+          (completed ? ", 해결 완료" : "")
+        );
+
+        button.addEventListener(
+          "click",
+          () => {
+            openQuestion(question);
+          }
+        );
+
+        dom.hotspots.appendChild(button);
+      });
+  }
+
+  function renderPlayer() {
+    dom.player.style.left =
+      `${state.player.x}%`;
+
+    dom.player.style.top =
+      `${state.player.y}%`;
+  }
+
+  function gameLoop() {
+    if (
+      !activeModal &&
+      !dom.gameScreen.classList.contains(
+        "hidden"
+      )
+    ) {
+      let horizontal = 0;
+      let vertical = 0;
+
+      if (
+        held.has("arrowleft") ||
+        held.has("a") ||
+        held.has("left")
+      ) {
+        horizontal -= 1;
+      }
+
+      if (
+        held.has("arrowright") ||
+        held.has("d") ||
+        held.has("right")
+      ) {
+        horizontal += 1;
+      }
+
+      if (
+        held.has("arrowup") ||
+        held.has("w") ||
+        held.has("up")
+      ) {
+        vertical -= 1;
+      }
+
+      if (
+        held.has("arrowdown") ||
+        held.has("s") ||
+        held.has("down")
+      ) {
+        vertical += 1;
+      }
+
+      if (horizontal || vertical) {
+        movePlayer(horizontal, vertical);
+      } else {
+        dom.player.classList.remove(
+          "walking"
+        );
+      }
+
+      updateInteraction();
+    }
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  function movePlayer(horizontal, vertical) {
+    const length =
+      Math.hypot(horizontal, vertical) || 1;
+
+    const speed = 0.12;
+
+    const nextX = clamp(
+      state.player.x +
+      horizontal / length * speed,
+      3,
+      97
+    );
+
+    const nextY = clamp(
+      state.player.y +
+      vertical / length * speed,
+      4,
+      96
+    );
+
+    if (!collides(nextX, nextY)) {
+      state.player.x = nextX;
+      state.player.y = nextY;
+
+      renderPlayer();
+    }
+
+    dom.player.classList.add("walking");
+
+    dom.player.classList.remove(
+      "facing-up",
+      "facing-down",
+      "facing-left",
+      "facing-right"
+    );
+
+    const facingClass =
+      Math.abs(horizontal) >
+      Math.abs(vertical)
+        ? horizontal < 0
+          ? "facing-left"
+          : "facing-right"
+        : vertical < 0
+          ? "facing-up"
+          : "facing-down";
+
+    dom.player.classList.add(facingClass);
+  }
+
+  function collides(x, y) {
+    const playerRadius = 2.6;
+
+    return obstacleRects.some(obstacle =>
+      x + playerRadius > obstacle.x &&
+      x - playerRadius <
+        obstacle.x + obstacle.w &&
+      y + playerRadius > obstacle.y &&
+      y - playerRadius <
+        obstacle.y + obstacle.h
+    );
+  }
+
+  function nearestTarget() {
+    let nearest = null;
+    let nearestDistance = 999;
+
+    roomQuestions(state.currentRoom)
+      .forEach((question, index) => {
+        const position =
+          hotspotPositions[index];
+
+        const distance = Math.hypot(
+          state.player.x - position.x,
+          state.player.y - position.y
+        );
+
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+
+          nearest = {
+            type: "question",
+            question
+          };
+        }
+      });
+
+    const doorDistance = Math.hypot(
+      state.player.x - 94,
+      state.player.y - 80
+    );
+
+    if (doorDistance < nearestDistance) {
+      nearestDistance = doorDistance;
+
+      nearest = {
+        type: "door"
+      };
+    }
+
+    return nearestDistance < 12
+      ? nearest
+      : null;
+  }
+
+  function updateInteraction() {
+    const target = nearestTarget();
+
+    if (!target) {
+      dom.interactionPrompt.classList.add(
+        "hidden"
+      );
+
+      return;
+    }
+
+    if (target.type === "question") {
+      const completed =
+        state.completedQuestions.includes(
+          target.question.id
+        );
+
+      dom.interactionPrompt.textContent =
+        completed
+          ? "Enter 키로 완료 장소 확인"
+          : "Enter 키로 문제 풀기";
+    } else {
+      dom.interactionPrompt.textContent =
+        "Enter 키로 문 조사";
+    }
+
+    dom.interactionPrompt.classList.remove(
+      "hidden"
+    );
+  }
+
+  function interact() {
+    const target = nearestTarget();
+
+    if (!target) {
+      showToast(
+        "빛나는 조사 지점이나 문 가까이에서 조사하세요."
+      );
+
+      return;
+    }
+
+    if (target.type === "question") {
+      openQuestion(target.question);
+    } else {
+      interactDoor();
+    }
+  }
+
+  function openQuestion(
+    question,
+    fromReview = false
+  ) {
+    sound("open");
+
+    if (
+      state.completedQuestions.includes(
+        question.id
+      ) &&
+      !fromReview
+    ) {
+      showToast(
+        "이곳의 문제는 이미 해결했습니다."
+      );
+
+      return;
+    }
+
+    currentQuestion = question;
+    reviewMode = fromReview;
+
+    dom.problemMeta.textContent =
+      `${rooms[question.room].name} · ` +
+      `난이도 ${question.difficulty}`;
+
+    dom.problemTitle.textContent =
+      question.question;
+
+    dom.feedback.className =
+      "feedback hidden";
+
+    dom.feedback.replaceChildren();
+
+    renderVisual(question);
+    renderAnswer(question);
+
+    dom.answerForm.querySelector(
+      "button[type='submit']"
+    ).disabled = false;
+
+    dom.hintBtn.disabled =
+      Boolean(state.hintUsed[question.id]);
+
+    openModal(dom.problemModal);
+  }
+
+  function renderVisual(question) {
+    dom.problemVisual.replaceChildren();
+
+    if (question.visual === "pedigree") {
+      dom.problemVisual.innerHTML =
+        pedigreeHtml();
+    } else if (question.type === "punnett") {
+      dom.problemVisual.innerHTML =
+        punnettHtml(question);
+    }
+  }
+
+  function pedigreeHtml() {
+    return `
+      <div
+        class="pedigree"
+        aria-label="가상 가계도"
+      >
+        <div class="legend">
+          <span>
+            <i class="shape"></i>
+            남성
+          </span>
+
+          <span>
+            <i class="shape circle"></i>
+            여성
+          </span>
+
+          <span>채움: 형질 나타남</span>
+        </div>
+
+        <svg
+          viewBox="0 0 420 190"
+          role="img"
+          aria-label="I세대 두 부모와 II세대 세 자녀 중 II-2에게 형질이 나타난 가상 가계도"
+        >
+          <text x="10" y="55">I</text>
+
+          <rect
+            x="100"
+            y="25"
+            width="42"
+            height="42"
+            fill="white"
+            stroke="#172435"
+            stroke-width="4"
+          />
+
+          <circle
+            cx="285"
+            cy="46"
+            r="21"
+            fill="white"
+            stroke="#172435"
+            stroke-width="4"
+          />
+
+          <line
+            x1="142"
+            y1="46"
+            x2="264"
+            y2="46"
+            stroke="#172435"
+            stroke-width="4"
+          />
+
+          <line
+            x1="203"
+            y1="46"
+            x2="203"
+            y2="95"
+            stroke="#172435"
+            stroke-width="4"
+          />
+
+          <line
+            x1="105"
+            y1="95"
+            x2="305"
+            y2="95"
+            stroke="#172435"
+            stroke-width="4"
+          />
+
+          <text x="10" y="150">II</text>
+
+          <line
+            x1="105"
+            y1="95"
+            x2="105"
+            y2="120"
+            stroke="#172435"
+            stroke-width="4"
+          />
+
+          <circle
+            cx="105"
+            cy="143"
+            r="21"
+            fill="white"
+            stroke="#172435"
+            stroke-width="4"
+          />
+
+          <line
+            x1="205"
+            y1="95"
+            x2="205"
+            y2="120"
+            stroke="#172435"
+            stroke-width="4"
+          />
+
+          <rect
+            x="184"
+            y="122"
+            width="42"
+            height="42"
+            fill="#172435"
+          />
+
+          <line
+            x1="305"
+            y1="95"
+            x2="305"
+            y2="120"
+            stroke="#172435"
+            stroke-width="4"
+          />
+
+          <circle
+            cx="305"
+            cy="143"
+            r="21"
+            fill="white"
+            stroke="#172435"
+            stroke-width="4"
+          />
+
+          <text x="100" y="184">1</text>
+          <text x="200" y="184">2</text>
+          <text x="300" y="184">3</text>
+        </svg>
+      </div>
+    `;
+  }
+
+  function punnettHtml(question) {
+    const options = [
+      ...new Set(question.answer)
+    ]
+      .sort()
+      .map(value =>
+        `<option value="${value}">` +
+        `${value}</option>`
+      )
+      .join("");
+
+    const rows = question.gametes[1]
+      .map((gamete, rowIndex) => {
+        const cells = [0, 1]
+          .map((unused, columnIndex) => `
+            <td>
+              <label
+                class="sr-only"
+                for="cell-${rowIndex}-${columnIndex}"
+              >
+                ${rowIndex + 1}행
+                ${columnIndex + 1}열
+              </label>
+
+              <select
+                id="cell-${rowIndex}-${columnIndex}"
+                data-punnett
+              >
+                <option value="">선택</option>
+                ${options}
+              </select>
+            </td>
+          `)
+          .join("");
+
+        return `
+          <tr>
+            <th>${gamete}</th>
+            ${cells}
+          </tr>
+        `;
+      })
+      .join("");
+
+    return `
+      <div class="notice">
+        부모:
+        ${question.parents[0]} ×
+        ${question.parents[1]}
+      </div>
+
+      <div class="punnett-wrap">
+        <table class="punnett">
+          <caption>퍼넷 사각형</caption>
+
+          <tr>
+            <th>생식세포</th>
+            <th>${question.gametes[0][0]}</th>
+            <th>${question.gametes[0][1]}</th>
+          </tr>
+
+          ${rows}
+        </table>
+      </div>
+    `;
+  }
+
+  function renderAnswer(question) {
+    dom.answerArea.replaceChildren();
+
+    if (question.type === "punnett") {
+      return;
+    }
+
+    const multiple =
+      question.type === "multiple-select";
+
+    if (multiple) {
+      const instruction =
+        document.createElement("p");
+
+      instruction.textContent =
+        "해당하는 것을 모두 선택하세요.";
+
+      instruction.className = "notice";
+
+      dom.answerArea.appendChild(
+        instruction
+      );
+    }
+
+    const choiceList =
+      document.createElement("div");
+
+    choiceList.className = "choice-list";
+
+    question.choices.forEach(
+      (choice, index) => {
+        const label =
+          document.createElement("label");
+
+        label.className = "choice";
+
+        const input =
+          document.createElement("input");
+
+        input.type =
+          multiple ? "checkbox" : "radio";
+
+        input.name = "answer";
+        input.value = String(index);
+
+        label.append(
+          input,
+          document.createTextNode(choice)
+        );
+
+        choiceList.appendChild(label);
+      }
+    );
+
+    dom.answerArea.appendChild(choiceList);
+  }
+
+  function readAnswer(question) {
+    if (question.type === "punnett") {
+      return [
+        ...dom.problemVisual.querySelectorAll(
+          "[data-punnett]"
+        )
+      ].map(select => select.value);
+    }
+
+    const selectedValues = [
+      ...dom.answerArea.querySelectorAll(
+        "input:checked"
+      )
+    ].map(input => Number(input.value));
+
+    if (
+      question.type === "multiple-select"
+    ) {
+      return selectedValues;
+    }
+
+    return selectedValues.length
+      ? selectedValues[0]
+      : null;
+  }
+
+  function normalized(value) {
+    if (Array.isArray(value)) {
+      return [...value]
+        .map(String)
+        .sort()
+        .join("|");
+    }
+
+    return String(value);
+  }
+
+  function isCorrect(question, value) {
+    return (
+      normalized(value) ===
+      normalized(question.answer)
+    );
+  }
+
+  function answerText(question, value) {
+    if (question.type === "punnett") {
+      return Array.isArray(value)
+        ? value.join(", ")
+        : String(value);
+    }
+
+    if (Array.isArray(value)) {
+      return value
+        .map(index =>
+          question.choices[index]
+        )
+        .join(", ");
+    }
+
+    return (
+      question.choices[value] ??
+      "선택 없음"
+    );
+  }
+
+  function submitAnswer(event) {
+    event.preventDefault();
+
+    if (!currentQuestion) {
+      return;
+    }
+
+    const question = currentQuestion;
+    const value = readAnswer(question);
+
+    const hasEmptyPunnettCell =
+      Array.isArray(value) &&
+      value.some(item => item === "");
+
+    const hasNoSelection =
+      Array.isArray(value) &&
+      value.length === 0;
+
+    if (
+      value === null ||
+      hasEmptyPunnettCell ||
+      hasNoSelection
+    ) {
+      showToast(
+        "답을 선택하거나 모든 칸을 완성하세요."
+      );
+
+      return;
+    }
+
+    state.attempts[question.id] =
+      (state.attempts[question.id] || 0) + 1;
+
+    if (isCorrect(question, value)) {
+      handleCorrect(question, value);
+    } else {
+      handleWrong(question, value);
+    }
+
+    save();
+    updateHud();
+  }
+
+  function calculateQuestionScore(question) {
+    const attempts =
+      state.attempts[question.id] || 1;
+
+    let points =
+      attempts === 1
+        ? 100
+        : attempts === 2
+          ? 70
+          : 40;
+
+    if (state.hintUsed[question.id]) {
+      points -= 20;
+    }
+
+    return Math.max(0, points);
+  }
+
+  // 점수 계산, 고유 열쇠 저장, 완료 저장,
+  // 화면 갱신 순서로 처리한다.
+  function handleCorrect(question, value) {
+    sound("correct");
+
+    if (question.type === "punnett") {
+      dom.problemVisual
+        .querySelectorAll("select")
+        .forEach(select => {
+          select.style.background =
+            "#e7f7ee";
+        });
+    }
+
+    const firstCompletion =
+      !state.completedQuestions.includes(
+        question.id
+      );
+
+    let earned = 0;
+    let streakBonus = 0;
+    let roomBonus = 0;
+
+    if (firstCompletion) {
+      earned =
+        calculateQuestionScore(question);
+
+      state.score += earned;
+
+      if (
+        state.attempts[question.id] === 1 &&
+        !state.hintUsed[question.id]
+      ) {
+        state.firstTryStreak += 1;
+        state.correctFirstTry += 1;
+
+        if (
+          state.firstTryStreak % 3 === 0
+        ) {
+          streakBonus = 50;
+          state.score += streakBonus;
+        }
+      } else {
+        state.firstTryStreak = 0;
+      }
+
+      state.completedQuestions = [
+        ...state.completedQuestions,
+        question.id
+      ];
+
+      const key = {
+        id: question.keyId,
+        room: question.room,
+        questionId: question.id,
+        label:
+          `${rooms[question.room].name} ` +
+          `열쇠 ${keysInRoom(
+            question.room
+          ) + 1}`,
+        color: rooms[question.room].color,
+        obtained: true,
+        used: false
+      };
+
+      if (
+        !state.keys.some(
+          savedKey =>
+            savedKey.id === key.id
+        )
+      ) {
+        state.keys = [
+          ...state.keys,
+          key
+        ];
+      }
+
+      if (
+        completedInRoom(question.room) === 5 &&
+        !state.bonuses.rooms.includes(
+          question.room
+        )
+      ) {
+        roomBonus = 200;
+        state.score += roomBonus;
+
+        state.bonuses.rooms = [
+          ...state.bonuses.rooms,
+          question.room
+        ];
+      }
+
+      state.reviewNotes =
+        state.reviewNotes.map(note =>
+          note.questionId === question.id
+            ? {
+                ...note,
+                reviewCompleted: true
+              }
+            : note
+        );
+
+      save();
+      updateHud();
+      renderHotspots();
+      updateDoor();
+      animateKey();
+    }
+
+    const punnettExplanation =
+      question.type === "punnett"
+        ? `
+          <p>
+            <strong>유전자형 비율:</strong>
+            ${question.genotypeRatio}
+          </p>
+
+          <p>
+            <strong>표현형 비율:</strong>
+            ${question.phenotypeRatio}
+          </p>
+
+          <p class="notice">
+            이 확률은 각 출생에서 가능한
+            결과를 뜻하며, 적은 수의 실제
+            자녀에게 반드시 정확한 비율로
+            나타나는 것은 아닙니다.
+          </p>
+        `
+        : "";
+
+    const rewardMessage =
+      firstCompletion
+        ? `
+          <p>
+            <strong>
+              문을 열 수 있는
+              ${rooms[question.room].keyName}를
+              얻었습니다.
+            </strong>
+
+            +${earned}점
+
+            ${
+              streakBonus
+                ? ` · 연속 정답 +${streakBonus}점`
+                : ""
+            }
+
+            ${
+              roomBonus
+                ? ` · 교실 완료 +${roomBonus}점`
+                : ""
+            }
+          </p>
+        `
+        : `
+          <p>
+            복습 완료! 점수와 열쇠는
+            중복 지급되지 않습니다.
+          </p>
+        `;
+
+    dom.feedback.className =
+      "feedback correct";
+
+    dom.feedback.innerHTML = `
+      <h3>✓ 정답입니다!</h3>
+
+      <p>
+        <strong>정답:</strong>
+        ${answerText(
+          question,
+          question.answer
+        )}
+      </p>
+
+      <p>${question.explanation}</p>
+
+      <p>
+        <strong>관련 개념:</strong>
+        ${question.concept}
+      </p>
+
+      ${punnettExplanation}
+      ${rewardMessage}
+
+      <div class="button-row">
+        <button
+          type="button"
+          data-feedback-close
+        >
+          확인
+        </button>
+      </div>
+    `;
+
+    dom.feedback
+      .querySelector(
+        "[data-feedback-close]"
+      )
+      .addEventListener(
+        "click",
+        closeModal
+      );
+
+    dom.answerForm.querySelector(
+      "button[type='submit']"
+    ).disabled = true;
+  }
+
+  function handleWrong(question, value) {
+    sound("wrong");
+
+    state.firstTryStreak = 0;
+
+    const attempts =
+      state.attempts[question.id];
+
+    let reason =
+      "선택한 답이 문제의 조건과 맞지 않습니다.";
+
+    if (question.type !== "punnett") {
+      if (Array.isArray(value)) {
+        reason = value
+          .map(index =>
+            question.wrongExplanations[index]
+          )
+          .filter(Boolean)
+          .join(" ");
+      } else {
+        reason =
+          question.wrongExplanations[value] ||
+          reason;
+      }
+    } else {
+      dom.problemVisual
+        .querySelectorAll("select")
+        .forEach((select, index) => {
+          const correct =
+            select.value ===
+            question.answer[index];
+
+          select.style.background =
+            correct
+              ? "#e7f7ee"
+              : "#fdebec";
+
+          select.title = correct
+            ? "올바른 조합"
+            : "위와 왼쪽의 대립유전자를 하나씩 합쳐 수정하세요.";
+        });
+
+      reason =
+        "표시된 칸 중 일부는 위쪽과 " +
+        "왼쪽 대립유전자의 조합이 아닙니다.";
+    }
+
+    const note = {
+      questionId: question.id,
+      userAnswer:
+        answerText(question, value),
+      correctAnswer:
+        answerText(
+          question,
+          question.answer
+        ),
+      reason,
+      explanation: question.explanation,
+      concept: question.concept,
+      reviewCompleted: false
+    };
+
+    const noteIndex =
+      state.reviewNotes.findIndex(
+        savedNote =>
+          savedNote.questionId ===
+          question.id
+      );
+
+    if (noteIndex < 0) {
+      state.reviewNotes = [
+        ...state.reviewNotes,
+        note
+      ];
+    } else {
+      state.reviewNotes =
+        state.reviewNotes.map(
+          (savedNote, index) =>
+            index === noteIndex
+              ? {
+                  ...savedNote,
+                  ...note
+                }
+              : savedNote
+        );
+    }
+
+    const learningMessage =
+      attempts >= 3
+        ? `
+          <strong>자세한 해설:</strong>
+          ${question.explanation}
+        `
+        : `
+          <strong>다시 생각하기:</strong>
+          ${question.concept}의 조건을
+          하나씩 확인하세요.
+        `;
+
+    dom.feedback.className =
+      "feedback wrong";
+
+    dom.feedback.innerHTML = `
+      <h3>
+        ✕ 아직 열쇠를 얻지 못했습니다.
+      </h3>
+
+      <p>${reason}</p>
+
+      <p>${learningMessage}</p>
+
+      <div class="button-row">
+        <button
+          type="button"
+          data-retry
+        >
+          다시 시도하기
+        </button>
+
+        <button
+          type="button"
+          data-inline-hint
+          ${
+            state.hintUsed[question.id]
+              ? "disabled"
+              : ""
+          }
+        >
+          힌트 보기
+        </button>
+      </div>
+    `;
+
+    dom.feedback
+      .querySelector("[data-retry]")
+      .addEventListener("click", () => {
+        dom.feedback.className =
+          "feedback hidden";
+
+        dom.answerForm.querySelector(
+          "button[type='submit']"
+        ).disabled = false;
+      });
+
+    dom.feedback
+      .querySelector(
+        "[data-inline-hint]"
+      )
+      .addEventListener(
+        "click",
+        showHint
+      );
+  }
+
+  function showHint() {
+    if (
+      !currentQuestion ||
+      state.hintUsed[currentQuestion.id]
+    ) {
+      return;
+    }
+
+    state.hintUsed[currentQuestion.id] =
+      true;
+
+    save();
+
+    dom.hintBtn.disabled = true;
+
+    showToast(
+      `힌트: ${currentQuestion.hint}`
+    );
+
+    updateHud();
+  }
+
+  function animateKey() {
+    sound("key");
+
+    dom.keyAnimation.classList.remove(
+      "hidden"
+    );
+
+    setTimeout(() => {
+      dom.keyAnimation.classList.add(
+        "hidden"
+      );
+    }, 950);
+  }
+
+  function updateDoor() {
+    const ready =
+      completedInRoom(state.currentRoom) === 5 &&
+      keysInRoom(state.currentRoom) === 5;
+
+    const opened =
+      state.openedDoors.includes(
+        state.currentRoom
+      );
+
+    dom.door.className =
+      `door ${
+        opened
+          ? "open"
+          : ready
+            ? "available"
+            : "locked"
+      }`;
+
+    dom.door.querySelector(
+      ".lock"
+    ).textContent =
+      opened
+        ? "✓"
+        : ready
+          ? "🔓"
+          : "🔒";
+
+    dom.door.setAttribute(
+      "aria-label",
+      opened
+        ? "열린 출입문"
+        : ready
+          ? "열 수 있는 출입문"
+          : "잠긴 출입문"
+    );
+  }
+
+  function interactDoor() {
+    const room = state.currentRoom;
+    const keyCount = keysInRoom(room);
+
+    if (
+      keyCount < 5 ||
+      completedInRoom(room) < 5
+    ) {
+      showToast(
+        "문을 열려면 열쇠가 더 필요합니다. " +
+        "교실에 남아 있는 유전 문제를 찾아보세요. " +
+        `${rooms[room].keyName} ${keyCount}/5개`
+      );
+
+      return;
+    }
+
+    openDoor(room);
+  }
+
+  function openDoor(room) {
+    held.clear();
+    sound("unlock");
+
+    state.keys = state.keys.map(key =>
+      key.room === room
+        ? {
+            ...key,
+            used: true
+          }
+        : key
+    );
+
+    if (
+      !state.openedDoors.includes(room)
+    ) {
+      state.openedDoors = [
+        ...state.openedDoors,
+        room
+      ];
+    }
+
+    save();
+    updateDoor();
+
+    dom.door.classList.add("open");
+
+    setTimeout(() => {
+      sound("door");
+      transition();
+
+      const currentIndex =
+        ROOM_ORDER.indexOf(room);
+
+      if (
+        currentIndex ===
+        ROOM_ORDER.length - 1
+      ) {
+        finishGame();
+      } else {
+        state.currentRoom =
+          ROOM_ORDER[currentIndex + 1];
+
+        state.player = {
+          x: 12,
+          y: 72
+        };
+
+        save();
+
+        setTimeout(
+          renderRoom,
+          420
+        );
+      }
+    }, 700);
+  }
+
+  function transition() {
+    dom.transition.classList.remove(
+      "hidden"
+    );
+
+    setTimeout(() => {
+      dom.transition.classList.add(
+        "hidden"
+      );
+    }, 950);
+  }
+
+  function finishGame() {
+    if (!state.bonuses.final) {
+      state.score += 500;
+      state.bonuses.final = true;
+    }
+
+    state.finished = true;
+
+    save();
+    sound("finish");
+
+    setTimeout(
+      showResults,
+      500
+    );
+  }
+
+  function showResults() {
+    dom.gameScreen.classList.add(
+      "hidden"
+    );
+
+    dom.startScreen.classList.add(
+      "hidden"
+    );
+
+    dom.resultScreen.classList.remove(
+      "hidden"
+    );
+
+    const rate = correctRate();
+
+    if (rate >= 90) {
+      dom.resultGrade.textContent =
+        "완벽한 탈출";
+    } else if (rate >= 80) {
+      dom.resultGrade.textContent =
+        "뛰어난 탈출";
+    } else if (rate >= 70) {
+      dom.resultGrade.textContent =
+        "성공적인 탈출";
+    } else {
+      dom.resultGrade.textContent =
+        "탈출 성공—복습 권장";
+    }
+
+    const roomRates =
+      ROOM_ORDER.map(room => {
+        const roomQuestionList =
+          roomQuestions(room);
+
+        const attempts =
+          roomQuestionList.reduce(
+            (total, question) =>
+              total +
+              (state.attempts[
+                question.id
+              ] || 0),
+            0
+          );
+
+        return {
+          room,
+          rate: attempts
+            ? Math.round(
+                roomQuestionList.length /
+                attempts *
+                100
+              )
+            : 0
+        };
+      });
+
+    const bestRoom = [
+      ...roomRates
+    ].sort(
+      (first, second) =>
+        second.rate - first.rate
+    )[0];
+
+    const reviewRoom = [
+      ...roomRates
+    ].sort(
+      (first, second) =>
+        first.rate - second.rate
+    )[0];
+
+    dom.resultStats.innerHTML = `
+      <div class="stat-card">
+        <strong>최종 점수</strong>
+        <br>
+        ${state.score}점
+      </div>
+
+      <div class="stat-card">
+        <strong>전체 정답률</strong>
+        <br>
+        ${rate}%
+      </div>
+
+      <div class="stat-card">
+        <strong>획득 열쇠</strong>
+        <br>
+        ${state.keys.length}/25개
+      </div>
+
+      <div class="stat-card">
+        <strong>힌트 사용</strong>
+        <br>
+        ${
+          Object.values(
+            state.hintUsed
+          ).filter(Boolean).length
+        }회
+      </div>
+
+      <div class="stat-card">
+        <strong>가장 높은 단원</strong>
+        <br>
+        ${rooms[bestRoom.room].name}
+        ${bestRoom.rate}%
+      </div>
+
+      <div class="stat-card">
+        <strong>추가 복습 단원</strong>
+        <br>
+        ${rooms[reviewRoom.room].name}
+        ${reviewRoom.rate}%
+      </div>
+
+      ${roomRates
+        .map(result => `
+          <div class="stat-card">
+            <strong>
+              ${rooms[result.room].name}
+            </strong>
+            <br>
+            정답률 ${result.rate}%
+          </div>
+        `)
+        .join("")}
+    `;
+  }
+
+  function updateHud() {
+    const room = state.currentRoom;
+
+    const progress = Math.round(
+      state.completedQuestions.length /
+      questions.length *
+      100
+    );
+
+    const usedHintCount =
+      Object.values(
+        state.hintUsed
+      ).filter(Boolean).length;
+
+    dom.scoreValue.textContent =
+      state.score;
+
+    dom.roomKeys.textContent =
+      `🔑 ${keysInRoom(room)}/5`;
+
+    dom.totalKeys.textContent =
+      `🔑 ${state.keys.length}/25`;
+
+    dom.progressValue.textContent =
+      `${progress}%`;
+
+    dom.progressBar.style.width =
+      `${progress}%`;
+
+    dom.hintCount.textContent =
+      `${usedHintCount}회`;
+  }
+
+  function renderConcept() {
+    const room = rooms[state.currentRoom];
+
+    const conceptCards =
+      room.concepts
+        .map(
+          (concept, index) => `
+            <article class="concept-item">
+              <strong>${index + 1}</strong>
+              <p>${concept}</p>
+            </article>
+          `
+        )
+        .join("");
+
+    dom.conceptContent.innerHTML = `
+      <p class="notice">
+        문제를 풀기 전에 핵심 개념을
+        확인하세요.
+      </p>
+
+      <div class="concept-grid">
+        ${conceptCards}
+      </div>
+    `;
+  }
+
+  function renderReview() {
+    if (!state.reviewNotes.length) {
+      dom.reviewList.innerHTML = `
+        <p>
+          아직 복습할 문제가 없습니다.
+          틀린 문제가 생기면 자동으로
+          저장됩니다.
+        </p>
+      `;
+
+      return;
+    }
+
+    dom.reviewList.innerHTML =
+      state.reviewNotes
+        .map(note => {
+          const question =
+            questions.find(
+              item =>
+                item.id === note.questionId
+            );
+
+          return `
+            <article
+              class="review-item ${
+                note.reviewCompleted
+                  ? "done"
+                  : ""
+              }"
+            >
+              <h3>
+                ${
+                  note.reviewCompleted
+                    ? "✓ 복습 완료"
+                    : "복습 필요"
+                }
+                · ${question.question}
+              </h3>
+
+              <p>
+                <strong>선택한 답:</strong>
+                ${note.userAnswer}
+              </p>
+
+              <p>
+                <strong>정답:</strong>
+                ${note.correctAnswer}
+              </p>
+
+              <p>
+                <strong>오답 이유:</strong>
+                ${note.reason}
+              </p>
+
+              <p>
+                <strong>풀이:</strong>
+                ${note.explanation}
+              </p>
+
+              <p>
+                <strong>개념:</strong>
+                ${note.concept}
+              </p>
+
+              <button
+                data-review="${question.id}"
+              >
+                다시 풀기
+              </button>
+            </article>
+          `;
+        })
+        .join("");
+
+    dom.reviewList
+      .querySelectorAll("[data-review]")
+      .forEach(button => {
+        button.addEventListener(
+          "click",
+          () => {
+            const question =
+              questions.find(
+                item =>
+                  item.id ===
+                  button.dataset.review
+              );
+
+            closeModal();
+            openQuestion(question, true);
+          }
+        );
+      });
+  }
+
+  let toastTimer;
+
+  function showToast(message) {
+    clearTimeout(toastTimer);
+
+    dom.toast.textContent = message;
+    dom.accessibleStatus.textContent =
+      message;
+
+    dom.toast.classList.remove("hidden");
+
+    toastTimer = setTimeout(() => {
+      dom.toast.classList.add("hidden");
+    }, 3500);
+  }
+
+  let audioContext = null;
+
+  function ensureAudio() {
+    if (!state.settings.soundEnabled) {
+      return null;
+    }
+
+    try {
+      const AudioContextClass =
+        window.AudioContext ||
+        window.webkitAudioContext;
+
+      audioContext =
+        audioContext ||
+        new AudioContextClass();
+
+      if (
+        audioContext.state === "suspended"
+      ) {
+        audioContext.resume();
+      }
+
+      return audioContext;
+    } catch {
+      return null;
+    }
+  }
+
+  function sound(type) {
+    const context = ensureAudio();
+
+    if (!context) {
+      return;
+    }
+
+    const tones = {
+      button: [330, 0.04],
+      open: [440, 0.06],
+      correct: [660, 0.14],
+      wrong: [180, 0.12],
+      key: [880, 0.2],
+      unlock: [520, 0.25],
+      door: [260, 0.22],
+      finish: [784, 0.4]
+    };
+
+    const selectedTone =
+      tones[type] || tones.button;
+
+    const frequency = selectedTone[0];
+    const duration = selectedTone[1];
+
+    const oscillator =
+      context.createOscillator();
+
+    const gain =
+      context.createGain();
+
+    oscillator.type = "sine";
+
+    oscillator.frequency.setValueAtTime(
+      frequency,
+      context.currentTime
+    );
+
+    gain.gain.setValueAtTime(
+      0.025,
+      context.currentTime
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+      0.001,
+      context.currentTime + duration
+    );
+
+    oscillator
+      .connect(gain)
+      .connect(context.destination);
+
+    oscillator.start();
+
+    oscillator.stop(
+      context.currentTime + duration
+    );
+  }
+
+  function toggleSound() {
+    state.settings.soundEnabled =
+      !state.settings.soundEnabled;
+
+    save();
+    updateSoundButtons();
+
+    if (state.settings.soundEnabled) {
+      sound("button");
+    }
+  }
+
+  function updateSoundButtons() {
+    const soundEnabled =
+      state.settings.soundEnabled;
+
+    dom.soundBtn.textContent =
+      soundEnabled ? "🔊" : "🔇";
+
+    dom.soundBtn.setAttribute(
+      "aria-label",
+      soundEnabled
+        ? "소리 끄기"
+        : "소리 켜기"
+    );
+
+    dom.soundBtn.setAttribute(
+      "aria-pressed",
+      String(soundEnabled)
+    );
+
+    dom.startSoundBtn.textContent =
+      soundEnabled
+        ? "🔊 소리 끄기"
+        : "🔇 소리 켜기";
+
+    dom.startSoundBtn.setAttribute(
+      "aria-pressed",
+      String(soundEnabled)
+    );
+  }
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    init
+  );
+})();
