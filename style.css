@@ -1222,3 +1222,9 @@ button:disabled {
     transition-duration: 0.001ms !important;
   }
 }
+/* 캐릭터와 이동 조작 UI 숨기기 */
+#player,
+#interactionPrompt,
+.mobile-controls {
+  display: none !important;
+}
